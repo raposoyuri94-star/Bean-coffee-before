@@ -146,7 +146,7 @@ function MenuItems({ items }: { items: string[][] }) {
   </div>
 }
 function BeanIcon() {
-  return <img src="/Bean Logo.jpg" alt="" aria-hidden="true" />
+  return <img src={import.meta.env.BASE_URL + "Bean Logo.jpg"} alt="" aria-hidden="true" />
 }
 
 function Brand() {
@@ -171,12 +171,12 @@ export default function BeanPage() {
       <a href="#top" aria-label="Bean Maputo home"><Brand /></a>
       <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}><span/><span/><b>Toggle navigation</b></button>
       <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Main navigation">
-        <a href="#story" onClick={close}>Our story</a><a href="#menu" onClick={close}>Menu</a><a href="/galeria" onClick={close}>Galeria</a><a href="#visit" onClick={close}>Visit us</a><a className="nav-cta" href="#menu" onClick={close}>Fazer pedido</a>
+        <a href="#story" onClick={close}>Our story</a><a href="#menu" onClick={close}>Menu</a><a href={import.meta.env.BASE_URL + "galeria"} onClick={close}>Galeria</a><a href="#visit" onClick={close}>Visit us</a><a className="nav-cta" href="#menu" onClick={close}>Fazer pedido</a>
       </nav>
     </header>
     <main id="top">
       <section className="hero-section">
-        <img className="hero-image" src="/bean-hero-clean.png" alt="Bean Maputo takeaway coffee and bag" fetchPriority="high"/><div className="hero-shade"/>
+        <img className="hero-image" src={import.meta.env.BASE_URL + "bean-hero-clean.png"} alt="Bean Maputo takeaway coffee and bag" fetchPriority="high"/><div className="hero-shade"/>
         <div className="hero-content">
           <p className="eyebrow"><span/>Coffee memories in Maputo</p>
           <h1>Comece o seu dia bem<br/><em>logo ao amanhecer</em></h1>

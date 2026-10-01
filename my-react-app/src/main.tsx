@@ -6,6 +6,6 @@ import GalleryPage from './GalleryPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {window.location.pathname.replace(/\/+$/, '') === '/galeria' ? <GalleryPage /> : <BeanPage />}
+    {window.location.pathname.replace(/\/+$/, '') === import.meta.env.BASE_URL.replace(/\/+$/, '') + '/galeria' ? <GalleryPage /> : <BeanPage />}
   </StrictMode>,
 )
