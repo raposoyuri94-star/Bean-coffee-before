@@ -169,7 +169,10 @@ export default function BeanPage() {
   return <div className="site-shell">
     <header className="header">
       <a href="#top" aria-label="Bean Maputo home"><Brand /></a>
+      <div className="mobile-menu-actions">
+        <a className="mobile-menu-link" href="#menu" onClick={close}>Menu</a>
       <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}><span/><span/><b>Toggle navigation</b></button>
+      </div>
       <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Main navigation">
         <a href="#story" onClick={close}>Our story</a><a href="#menu" onClick={close}>Menu</a><a href={import.meta.env.BASE_URL + "galeria"} onClick={close}>Galeria</a><a href="#visit" onClick={close}>Visit us</a><a className="nav-cta" href="#menu" onClick={close}>Fazer pedido</a>
       </nav>
@@ -193,9 +196,9 @@ export default function BeanPage() {
           <article><strong>03</strong><div><h3>Feito com intenção</h3><p>Cada xícara afinada com precisão e servida com a autêntica hospitalidade moçambicana.</p></div></article>
         </div>
       </section>
-      <section className="menu-section" id="menu">
+      <section className="menu-section">
        <div className="menu-heading"><div><p className="section-tag light">O nosso menu</p><h2>Menu enxuto.<br/><em>Grande personalidade.</em></h2></div><p>Favoritos da casa feitos com grãos cuidadosamente torrados e ingredientes que amamos.</p></div>
-        <div className="menu-category-controls" role="group" aria-label="Categorias do menu">
+        <div className="menu-category-controls" id="menu" role="group" aria-label="Categorias do menu">
           {menuCategories.map((category, index) => <button
             key={category.id} type="button" aria-pressed={menuCategory === index}
             aria-controls={'menu-' + category.id} onClick={() => slideMenu(index)}

@@ -802,3 +802,29 @@ button:focus-visible {
     height: 1px;
   }
 }
+
+/* Direct access to the food and drink menu in the mobile header. */
+.mobile-menu-actions {
+  display: none;
+}
+@media (max-width: 760px) {
+  .mobile-menu-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+  }
+  .mobile-menu-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid #ffffffa6;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
