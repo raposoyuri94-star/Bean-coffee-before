@@ -137,7 +137,7 @@ const menuCategories: MenuCategory[] = [
   },
 ]
 
-const locationQuery = encodeURIComponent('822 Av. Julius Nyerere, Maputo, Mozambique')
+const locationQuery = encodeURIComponent('Bean Coffee Shop, 822 Av. Julius Nyerere, Maputo, Mozambique')
 
 function MenuItems({ items }: { items: string[][] }) {
   return <div className="menu-list">
@@ -163,8 +163,9 @@ export default function BeanPage() {
   const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const menuScrollTimeout = useRef<number | undefined>(undefined)
-  const requestedCategory = useRef(0)
+  const requestedCategory = useRef<number | null>(null)
   const [menuCategory, setMenuCategory] = useState(0)
+  const [settledMenuCategory, setSettledMenuCategory] = useState(0)
   useInitialHashScroll()
 
   useEffect(() => {
@@ -205,10 +206,10 @@ export default function BeanPage() {
 
   useEffect(() => () => window.clearTimeout(menuScrollTimeout.current), [])
 
-  // Keep every slide laid out during a swipe, but reserve only the active slide's height.
+  // Keep slides laid out during a swipe; resize only after scrolling settles.
   useLayoutEffect(() => {
     const menu = menuRef.current
-    const slide = menu?.children[menuCategory]
+    const slide = menu?.children[settledMenuCategory]
     if (!menu || !slide) return
 
     let previousWidth = menu.clientWidth
@@ -228,17 +229,22 @@ export default function BeanPage() {
     observer.observe(menu)
     observer.observe(slide)
     return () => observer.disconnect()
-  }, [menuCategory])
+  }, [settledMenuCategory])
+
+  const visibleMenuCategory = () => {
+    const menu = menuRef.current
+    if (!menu) return menuCategory
+    const left = menu.getBoundingClientRect().left
+    const distances = Array.from(menu.children, slide => Math.abs(slide.getBoundingClientRect().left - left))
+    return distances.indexOf(Math.min(...distances))
+  }
 
   const syncMenuCategory = () => {
     window.clearTimeout(menuScrollTimeout.current)
-    const menu = menuRef.current
-    if (!menu) return
-    const left = menu.getBoundingClientRect().left
-    const distances = Array.from(menu.children, slide => Math.abs(slide.getBoundingClientRect().left - left))
-    const index = distances.indexOf(Math.min(...distances))
-    requestedCategory.current = index
+    const index = visibleMenuCategory()
+    requestedCategory.current = null
     setMenuCategory(index)
+    setSettledMenuCategory(index)
   }
 
   const slideMenu = (index: number) => {
@@ -247,8 +253,16 @@ export default function BeanPage() {
     if (!menu || !slide) return
     window.clearTimeout(menuScrollTimeout.current)
     requestedCategory.current = index
+    setMenuCategory(index)
+    const left = menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left
+    if (Math.abs(left - menu.scrollLeft) < 1) {
+      menu.scrollTo({ left, behavior: 'instant' })
+      requestedCategory.current = null
+      setSettledMenuCategory(index)
+      return
+    }
     menu.scrollTo({
-      left: menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left,
+      left,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     })
   }
@@ -273,7 +287,7 @@ export default function BeanPage() {
           <p className="hero-copy"><em>Manhãs calmas, café honesto e o ritmo acolhedor da nossa cidade. Venha pelo café. Fique pela sensação.</em></p>
           <div className="hero-actions"><a className="button button-light" href="#menu">Explore o nosso menu<span></span></a><a className="text-link" href="#story">Descobra a nossa história <span></span></a></div>
         </div>
-        <div className="hero-meta"><span>MAPUTO, MOÇAMBIQUE</span><span>-25.9644° S · 32.5992° E</span></div><a className="scroll-cue" href="#story" aria-label="Scroll to our story">↓</a>
+        <div className="hero-meta"><span>MAPUTO, MOÇAMBIQUE</span><span>822 AV. JULIUS NYERERE</span></div><a className="scroll-cue" href="#story" aria-label="Scroll to our story">↓</a>
       </section>
       <section className="manifesto" id="story">
         <p className="section-tag">Nossa filosofia</p><p className="manifesto-text">O café deve ser como um abraço quentinho em uma xícara.</p>
@@ -295,13 +309,16 @@ export default function BeanPage() {
         <div className="menu-categories" ref={menuRef} role="region" aria-label="Secções do menu" tabIndex={0}
           aria-describedby="menu-category-hint"
           onScroll={() => {
+            if (requestedCategory.current === null) setMenuCategory(visibleMenuCategory())
             window.clearTimeout(menuScrollTimeout.current)
             menuScrollTimeout.current = window.setTimeout(syncMenuCategory, 150)
           }}
           onScrollEnd={syncMenuCategory}
+          onPointerDown={() => { requestedCategory.current = null }}
+          onWheel={() => { requestedCategory.current = null }}
           onKeyDown={event => {
             if (event.target !== event.currentTarget) return
-            let index = requestedCategory.current
+            let index = requestedCategory.current ?? menuCategory
             if (event.key === 'ArrowRight') index = Math.min(index + 1, menuCategories.length - 1)
             else if (event.key === 'ArrowLeft') index = Math.max(index - 1, 0)
             else if (event.key === 'Home') index = 0
@@ -329,7 +346,7 @@ export default function BeanPage() {
       </section>
       <section className="visit-section" id="visit">
         <div><p className="section-tag">Venha dizer olá</p><h2>Uma boa xícara está<br/>mais perto do que você imagina.</h2></div>
-<div className="visit-details"><div><span>Encontre-nos</span><p>822 Av. Julius Nyerere<br/>Maputo 0000, Mozambique</p></div><div><span>Horário de funcionamento</span><p>Seg - Sex &nbsp; 07:00-18:00<br/>Sáb - Dom &nbsp; 08:00-16:00</p></div><div className="visit-map"><iframe title="Mapa da Bean Coffee Shop em Maputo" src={`https://maps.google.com/maps?q=${locationQuery}&z=17&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /><a href={`https://www.google.com/maps/search/?api=1&query=${locationQuery}`} target="_blank" rel="noreferrer">Abrir no Google Maps</a></div></div>
+<div className="visit-details"><div><span>Encontre-nos</span><p>822 Av. Julius Nyerere<br/>Maputo, Moçambique</p></div><div><span>Horário de funcionamento</span><p>Seg - Sex &nbsp; 07:00-18:00<br/>Sáb - Dom &nbsp; 08:00-16:00</p></div><div className="visit-map"><iframe title="Mapa da Bean Coffee Shop em Maputo" src={`https://maps.google.com/maps?q=${locationQuery}&z=17&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /><a href={`https://www.google.com/maps/search/?api=1&query=${locationQuery}`} target="_blank" rel="noreferrer">Abrir no Google Maps</a></div></div>
       </section>
     </main>
 <footer inert={open}><a href="#top"><Brand/></a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
