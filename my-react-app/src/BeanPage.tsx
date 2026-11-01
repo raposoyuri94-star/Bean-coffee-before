@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useInitialHashScroll } from './useInitialHashScroll'
 import './BeanPage.css'
 
 
@@ -34,7 +35,7 @@ const menuCategories: MenuCategory[] = [
       ['Verde', '', '180 MT'],
       ['Frutos vermelhos', '', '200 MT'],
     ] },
-    
+
       { name: 'Bebidas frias', items: [
       ['Água pequena', '',  '100 MT'],
       ['Água das pedras', '', '150 MT'],
@@ -136,11 +137,13 @@ const menuCategories: MenuCategory[] = [
   },
 ]
 
+const locationQuery = encodeURIComponent('822 Av. Julius Nyerere, Maputo, Mozambique')
+
 function MenuItems({ items }: { items: string[][] }) {
   return <div className="menu-list">
     {items.length ? items.map((item, i) => <article className="menu-item" key={`${item[0]}-${item[1]}`}>
       <span className="item-number">{String(i + 1).padStart(2, '0')}</span>
-      <div><h4>{item[0]}</h4><p>{item[1]}</p></div>
+      <div><h5>{item[0]}</h5>{item[1] && <p>{item[1]}</p>}</div>
       <strong>{item[2]}</strong>
     </article>) : <p className="menu-category-empty">Novidades em breve.</p>}
   </div>
@@ -156,28 +159,112 @@ function Brand() {
 export default function BeanPage() {
   const [open, setOpen] = useState(false)
   const close = () => setOpen(false)
+  const headerRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const menuScrollTimeout = useRef<number | undefined>(undefined)
+  const requestedCategory = useRef(0)
   const [menuCategory, setMenuCategory] = useState(0)
-  const slideMenu = (index: number) => {
+  useInitialHashScroll()
+
+  useEffect(() => {
+    if (!open) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const mobile = window.matchMedia('(max-width: 760px)')
+    const handleResize = () => { if (!mobile.matches) setOpen(false) }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+        toggleRef.current?.focus()
+      }
+      if (event.key === 'Tab') {
+        const links = headerRef.current?.querySelectorAll<HTMLElement>('a, button')
+        const first = links?.[0]
+        const last = links?.[links.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last?.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first?.focus()
+        }
+      }
+    }
+
+    headerRef.current?.querySelector<HTMLElement>('.nav a')?.focus({ preventScroll: true })
+    document.addEventListener('keydown', handleKeyDown)
+    mobile.addEventListener('change', handleResize)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+      mobile.removeEventListener('change', handleResize)
+    }
+  }, [open])
+
+  useEffect(() => () => window.clearTimeout(menuScrollTimeout.current), [])
+
+  // Keep every slide laid out during a swipe, but reserve only the active slide's height.
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    const slide = menu?.children[menuCategory]
+    if (!menu || !slide) return
+
+    let previousWidth = menu.clientWidth
+    const updateLayout = () => {
+      const scrollbarHeight = menu.offsetHeight - menu.clientHeight
+      menu.style.height = `${Math.ceil(slide.getBoundingClientRect().height) + scrollbarHeight}px`
+      if (menu.clientWidth !== previousWidth) {
+        previousWidth = menu.clientWidth
+        menu.scrollTo({
+          left: menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left,
+          behavior: 'instant',
+        })
+      }
+    }
+    updateLayout()
+    const observer = new ResizeObserver(updateLayout)
+    observer.observe(menu)
+    observer.observe(slide)
+    return () => observer.disconnect()
+  }, [menuCategory])
+
+  const syncMenuCategory = () => {
+    window.clearTimeout(menuScrollTimeout.current)
     const menu = menuRef.current
     if (!menu) return
+    const left = menu.getBoundingClientRect().left
+    const distances = Array.from(menu.children, slide => Math.abs(slide.getBoundingClientRect().left - left))
+    const index = distances.indexOf(Math.min(...distances))
+    requestedCategory.current = index
+    setMenuCategory(index)
+  }
+
+  const slideMenu = (index: number) => {
+    const menu = menuRef.current
+    const slide = menu?.children[index]
+    if (!menu || !slide) return
+    window.clearTimeout(menuScrollTimeout.current)
+    requestedCategory.current = index
     menu.scrollTo({
-      left: index * menu.clientWidth,
+      left: menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     })
   }
   return <div className="site-shell">
-    <header className="header">
-      <a href="#top" aria-label="Bean Maputo home"><Brand /></a>
+    <a className="skip-link" href="#top">Saltar para o conteúdo</a>
+    <header className="header" ref={headerRef}>
+      <a href="#top" aria-label="Bean Maputo — página inicial" onClick={close}><Brand /></a>
       <div className="mobile-menu-actions">
         <a className="mobile-menu-link" href="#menu" onClick={close}>Menu</a>
-      <button className="menu-toggle" type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}><span/><span/><b>Toggle navigation</b></button>
+      <button className="menu-toggle" ref={toggleRef} type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}><span/><span/><b>{open ? 'Fechar navegação' : 'Abrir navegação'}</b></button>
       </div>
       <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Main navigation">
         <a href="#story" onClick={close}>Our story</a><a href="#menu" onClick={close}>Menu</a><a href={import.meta.env.BASE_URL + "galeria"} onClick={close}>Galeria</a><a href="#visit" onClick={close}>Visit us</a><a className="nav-cta" href="#menu" onClick={close}>Fazer pedido</a>
       </nav>
     </header>
-    <main id="top">
+    <main id="top" tabIndex={-1} inert={open}>
       <section className="hero-section">
         <img className="hero-image" src={import.meta.env.BASE_URL + "bean-hero-clean.png"} alt="Bean Maputo takeaway coffee and bag" fetchPriority="high"/><div className="hero-shade"/>
         <div className="hero-content">
@@ -196,19 +283,32 @@ export default function BeanPage() {
           <article><strong>03</strong><div><h3>Feito com intenção</h3><p>Cada xícara afinada com precisão e servida com a autêntica hospitalidade moçambicana.</p></div></article>
         </div>
       </section>
-      <section className="menu-section">
-       <div className="menu-heading"><div><p className="section-tag light">O nosso menu</p><h2>Menu enxuto.<br/><em>Grande personalidade.</em></h2></div><p>Favoritos da casa feitos com grãos cuidadosamente torrados e ingredientes que amamos.</p></div>
+      <section className="menu-section" aria-labelledby="menu-title">
+       <div className="menu-heading"><div><p className="section-tag light">O nosso menu</p><h2 id="menu-title">Menu enxuto.<br/><em>Grande personalidade.</em></h2></div><p>Favoritos da casa feitos com grãos cuidadosamente torrados e ingredientes que amamos.</p></div>
         <div className="menu-category-controls" id="menu" role="group" aria-label="Categorias do menu">
           {menuCategories.map((category, index) => <button
             key={category.id} type="button" aria-pressed={menuCategory === index}
             aria-controls={'menu-' + category.id} onClick={() => slideMenu(index)}
           >{category.name}</button>)}
         </div>
-        <p className="menu-category-hint">Deslize para explorar as categorias.</p>
+        <p className="menu-category-hint" id="menu-category-hint">Escolha uma categoria ou deslize para explorar.</p>
         <div className="menu-categories" ref={menuRef} role="region" aria-label="Secções do menu" tabIndex={0}
-          onScroll={event => {
-            const menu = event.currentTarget
-            setMenuCategory(Math.round(menu.scrollLeft / menu.clientWidth))
+          aria-describedby="menu-category-hint"
+          onScroll={() => {
+            window.clearTimeout(menuScrollTimeout.current)
+            menuScrollTimeout.current = window.setTimeout(syncMenuCategory, 150)
+          }}
+          onScrollEnd={syncMenuCategory}
+          onKeyDown={event => {
+            if (event.target !== event.currentTarget) return
+            let index = requestedCategory.current
+            if (event.key === 'ArrowRight') index = Math.min(index + 1, menuCategories.length - 1)
+            else if (event.key === 'ArrowLeft') index = Math.max(index - 1, 0)
+            else if (event.key === 'Home') index = 0
+            else if (event.key === 'End') index = menuCategories.length - 1
+            else return
+            event.preventDefault()
+            slideMenu(index)
           }}>
           {menuCategories.map((category, index) => <section className="menu-category" data-active={menuCategory === index} aria-hidden={menuCategory !== index} id={'menu-' + category.id} key={category.id} aria-labelledby={'heading-' + category.id}>
             <h3 className="menu-category-title" id={'heading-' + category.id}>{category.name}</h3>
@@ -229,9 +329,9 @@ export default function BeanPage() {
       </section>
       <section className="visit-section" id="visit">
         <div><p className="section-tag">Venha dizer olá</p><h2>Uma boa xícara está<br/>mais perto do que você imagina.</h2></div>
-<div className="visit-details"><div><span>Encontre-nos</span><p>822 Av. Julius Nyerere<br/>Maputo 0000, Mozambique</p></div><div><span>Horário de funcionamento</span><p>Seg - Sex &nbsp; 07:00-18:00<br/>Sáb - Dom &nbsp; 08:00-16:00</p></div><div className="visit-map"><iframe title="Mapa da Bean Coffee Shop em Maputo" src="https://maps.google.com/maps?q=822%20Av.%20Julius%20Nyerere%2C%20Maputo%BeanCofeeshop%2C%20Mozambique&amp;z=17&amp;output=embed" loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /><a href="https://www.google.com/maps/search/?api=1&amp;query=822%20Av.%20Julius%20Nyerere%2C%20Maputo%200000%2C%20Mozambique" target="_blank" rel="noreferrer">Abrir no Google Maps</a></div></div>
+<div className="visit-details"><div><span>Encontre-nos</span><p>822 Av. Julius Nyerere<br/>Maputo 0000, Mozambique</p></div><div><span>Horário de funcionamento</span><p>Seg - Sex &nbsp; 07:00-18:00<br/>Sáb - Dom &nbsp; 08:00-16:00</p></div><div className="visit-map"><iframe title="Mapa da Bean Coffee Shop em Maputo" src={`https://maps.google.com/maps?q=${locationQuery}&z=17&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /><a href={`https://www.google.com/maps/search/?api=1&query=${locationQuery}`} target="_blank" rel="noreferrer">Abrir no Google Maps</a></div></div>
       </section>
     </main>
-<footer><a href="#top"><Brand/></a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
+<footer inert={open}><a href="#top"><Brand/></a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
   </div>
 }

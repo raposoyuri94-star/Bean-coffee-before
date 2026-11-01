@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useInitialHashScroll } from './useInitialHashScroll'
 import './BeanPage.css'
 import './GalleryPage.css'
 
@@ -14,7 +15,9 @@ const photos = [
 
 export default function GalleryPage() {
   const [selected, setSelected] = useState(0)
+  const [enlarged, setEnlarged] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
+  useInitialHashScroll()
 
   useEffect(() => {
     const previousTitle = document.title
@@ -24,14 +27,20 @@ export default function GalleryPage() {
     return () => {
       document.title = previousTitle
       document.documentElement.lang = previousLanguage
-      document.body.style.overflow = ''
     }
   }, [])
+
+  useEffect(() => {
+    if (!enlarged) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [enlarged])
 
   const enlarge = (index: number) => {
     setSelected(index)
     dialog.current?.showModal()
-    document.body.style.overflow = 'hidden'
+    setEnlarged(true)
   }
   const close = () => dialog.current?.close()
 
@@ -76,7 +85,7 @@ export default function GalleryPage() {
       </section>
     </main>
     <footer><a href={import.meta.env.BASE_URL + ""}>BEAN MAPUTO</a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
-    <dialog className="gallery-dialog" ref={dialog} aria-label="Fotografia ampliada" onClose={() => { document.body.style.overflow = '' }} onClick={event => { if (event.target === event.currentTarget) close() }}>
+    <dialog className="gallery-dialog" ref={dialog} aria-label="Fotografia ampliada" onClose={() => setEnlarged(false)} onClick={event => { if (event.target === event.currentTarget) close() }}>
       <div className="gallery-dialog-content">
         <button className="gallery-close" type="button" onClick={close} autoFocus>Fechar ×</button>
         <img src={photos[selected].src} alt={photos[selected].alt} />

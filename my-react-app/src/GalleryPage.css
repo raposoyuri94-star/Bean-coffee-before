@@ -26,7 +26,7 @@
 .gallery-invitation .section-tag { justify-content: center; color: #d5c7b4; }
 .gallery-invitation h2 { color: var(--paper); font-size: clamp(40px, 5vw, 64px); margin-bottom: 35px; }
 .gallery-page footer a { text-decoration: none; }
-.gallery-dialog { padding: 0; border: 0; width: min(920px, 94vw); max-height: 94svh; background: #172318; color: #f2eee5; }
+.gallery-dialog { padding: 0; border: 0; width: min(920px, 94vw); max-height: 94svh; overscroll-behavior: contain; background: #172318; color: #f2eee5; }
 .gallery-dialog::backdrop { background: #080c08e8; }
 .gallery-dialog[open] { animation: gallery-arrive 240ms both; }
 .gallery-dialog-content { padding: 20px; }
