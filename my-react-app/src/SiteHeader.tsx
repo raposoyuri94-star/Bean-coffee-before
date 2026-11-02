@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function Brand() {
   return <span className="brand">
@@ -13,11 +13,58 @@ type SiteHeaderProps = {
   onOpenChange: (open: boolean) => void
 }
 
+type SectionId = 'story' | 'menu' | 'visit'
+
 export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
+  const [activeSection, setActiveSection] = useState<SectionId | null>(null)
   const home = page === 'home' ? '' : import.meta.env.BASE_URL
   const close = () => onOpenChange(false)
+
+  useEffect(() => {
+    if (page !== 'home') return
+
+    const sections: { id: SectionId; element: Element | null }[] = [
+      { id: 'story', element: document.getElementById('story') },
+      { id: 'menu', element: document.querySelector('.menu-section') },
+      { id: 'visit', element: document.getElementById('visit') },
+    ]
+    let frame = 0
+    const updateSection = () => {
+      frame = 0
+      const headerBottom = headerRef.current?.getBoundingClientRect().bottom ?? 0
+      const marker = headerBottom + Math.min(window.innerHeight * 0.2, 160)
+      let current: SectionId | null = null
+      for (const { id, element } of sections) {
+        if (element && element.getBoundingClientRect().top <= marker) current = id
+      }
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1) {
+        current = 'visit'
+      }
+      setActiveSection(current)
+    }
+    const scheduleUpdate = () => {
+      if (!frame) frame = window.requestAnimationFrame(updateSection)
+    }
+
+    scheduleUpdate()
+    if (open) return () => window.cancelAnimationFrame(frame)
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    window.addEventListener('hashchange', scheduleUpdate)
+    const observer = new ResizeObserver(scheduleUpdate)
+    for (const { element } of sections) {
+      if (element) observer.observe(element)
+    }
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      window.removeEventListener('hashchange', scheduleUpdate)
+      observer.disconnect()
+    }
+  }, [page, open])
 
   useEffect(() => {
     if (!open) return
@@ -29,7 +76,7 @@ export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHe
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onOpenChange(false)
-        toggleRef.current?.focus()
+        toggleRef.current?.focus({ preventScroll: true })
       }
       if (event.key === 'Tab') {
         const links = headerRef.current?.querySelectorAll<HTMLElement>('a, button')
@@ -64,10 +111,10 @@ export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHe
       </button>
     </div>
     <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Navegação principal">
-      <a href={home + '#story'} onClick={close}>Our story</a>
-      <a href={home + '#menu'} onClick={close}>Menu</a>
+      <a href={home + '#story'} aria-current={page === 'home' && activeSection === 'story' ? 'location' : undefined} onClick={close}>Our story</a>
+      <a href={home + '#menu'} aria-current={page === 'home' && activeSection === 'menu' ? 'location' : undefined} onClick={close}>Menu</a>
       <a href={import.meta.env.BASE_URL + 'galeria'} aria-current={page === 'gallery' ? 'page' : undefined} onClick={close}>Galeria</a>
-      <a href={home + '#visit'} onClick={close}>Visit us</a>
+      <a href={home + '#visit'} aria-current={page === 'home' && activeSection === 'visit' ? 'location' : undefined} onClick={close}>Visit us</a>
       <a className="nav-cta" href={home + '#menu'} onClick={close}>Fazer pedido</a>
     </nav>
   </header>
