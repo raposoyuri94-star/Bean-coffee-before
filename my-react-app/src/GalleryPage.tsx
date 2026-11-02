@@ -55,7 +55,6 @@ export default function GalleryPage() {
         <h1 id="gallery-title">Pequenos momentos.<br /><em>Boas memórias.</em></h1>
         <div className="gallery-intro-bottom">
           <p>Um olhar sobre o universo Bean. Café, detalhes e momentos que apetece guardar.</p>
-          <a href="#fotografias">Explore a galeria <span aria-hidden="true">↓</span></a>
         </div>
       </section>
       <section className="gallery-grid" id="fotografias" aria-label="Fotografias Bean">

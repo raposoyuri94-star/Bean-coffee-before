@@ -170,6 +170,7 @@ export default function BeanPage() {
     const updateLayout = () => {
       const scrollbarHeight = menu.offsetHeight - menu.clientHeight
       menu.style.height = `${Math.ceil(slide.getBoundingClientRect().height) + scrollbarHeight}px`
+      menu.scrollTop = 0
       if (menu.clientWidth !== previousWidth) {
         previousWidth = menu.clientWidth
         menu.scrollTo({
@@ -193,12 +194,20 @@ export default function BeanPage() {
     return distances.indexOf(Math.min(...distances))
   }
 
-  const syncMenuCategory = () => {
-    window.clearTimeout(menuScrollTimeout.current)
-    const index = visibleMenuCategory()
+  const settleMenuCategory = (index: number) => {
+    const menu = menuRef.current
+    // Return to the category controls before shortening a menu scrolled past its start.
+    if (index !== settledMenuCategory && menu && menu.getBoundingClientRect().top < 0) {
+      document.getElementById('menu')?.scrollIntoView({ behavior: 'instant', block: 'start' })
+    }
     requestedCategory.current = null
     setMenuCategory(index)
     setSettledMenuCategory(index)
+  }
+
+  const syncMenuCategory = () => {
+    window.clearTimeout(menuScrollTimeout.current)
+    settleMenuCategory(visibleMenuCategory())
   }
 
   const slideMenu = (index: number) => {
@@ -211,8 +220,7 @@ export default function BeanPage() {
     const left = menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left
     if (Math.abs(left - menu.scrollLeft) < 1) {
       menu.scrollTo({ left, behavior: 'instant' })
-      requestedCategory.current = null
-      setSettledMenuCategory(index)
+      settleMenuCategory(index)
       return
     }
     menu.scrollTo({
