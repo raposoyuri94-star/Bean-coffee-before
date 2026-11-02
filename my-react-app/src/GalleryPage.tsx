@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import SiteHeader from './SiteHeader'
 import { useInitialHashScroll } from './useInitialHashScroll'
 import './BeanPage.css'
 import './GalleryPage.css'
@@ -16,6 +17,7 @@ const photos = [
 export default function GalleryPage() {
   const [selected, setSelected] = useState(0)
   const [enlarged, setEnlarged] = useState(false)
+  const [navigationOpen, setNavigationOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   useInitialHashScroll()
 
@@ -45,18 +47,9 @@ export default function GalleryPage() {
   const close = () => dialog.current?.close()
 
   return <div className="site-shell gallery-page" lang="pt-MZ">
-    <header className="gallery-header">
-      <a className="brand" href={import.meta.env.BASE_URL + ""} aria-label="Bean Maputo — página inicial">
-        <span className="brand-mark"><img src={import.meta.env.BASE_URL + "Bean Logo.jpg"} alt="" /></span>
-        <span>BEAN <i>MAPUTO</i></span>
-      </a>
-      <nav aria-label="Navegação principal">
-        <a href={import.meta.env.BASE_URL + ""}>Início</a>
-        <a href={import.meta.env.BASE_URL + "galeria"} aria-current="page">Galeria</a>
-        <a href={import.meta.env.BASE_URL + "#visit"}>Visite-nos</a>
-      </nav>
-    </header>
-    <main id="gallery-main">
+    <a className="skip-link" href="#gallery-main">Saltar para o conteúdo</a>
+    <SiteHeader page="gallery" open={navigationOpen} onOpenChange={setNavigationOpen} />
+    <main id="gallery-main" tabIndex={-1} inert={navigationOpen}>
       <section className="gallery-intro" aria-labelledby="gallery-title">
         <p className="section-tag">O NOSSO ÁLBUM / MAPUTO</p>
         <h1 id="gallery-title">Pequenos momentos.<br /><em>Boas memórias.</em></h1>
@@ -84,7 +77,7 @@ export default function GalleryPage() {
         <a className="button button-gold" href={import.meta.env.BASE_URL + "#visit"}>Venha conhecer-nos </a>
       </section>
     </main>
-    <footer><a href={import.meta.env.BASE_URL + ""}>BEAN MAPUTO</a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
+    <footer inert={navigationOpen}><a href={import.meta.env.BASE_URL + ""}>BEAN MAPUTO</a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
     <dialog className="gallery-dialog" ref={dialog} aria-label="Fotografia ampliada" onClose={() => setEnlarged(false)} onClick={event => { if (event.target === event.currentTarget) close() }}>
       <div className="gallery-dialog-content">
         <button className="gallery-close" type="button" onClick={close} autoFocus>Fechar ×</button>

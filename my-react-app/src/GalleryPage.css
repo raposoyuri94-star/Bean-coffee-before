@@ -1,8 +1,4 @@
 .gallery-page { color-scheme: light; }
-.gallery-header { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 30px clamp(24px, 5vw, 78px); background: var(--green); color: var(--paper); }
-.gallery-header a { text-decoration: none; }
-.gallery-header nav { display: flex; gap: 26px; font-size: 13px; }
-.gallery-header [aria-current] { color: #e3b879; border-bottom: 1px solid; padding-bottom: 5px; }
 .gallery-intro { padding: 90px clamp(24px, 7vw, 100px) 60px; animation: gallery-arrive 800ms both; }
 .gallery-intro .section-tag { margin-bottom: 28px; }
 .gallery-intro h1 { color: var(--green); font-size: clamp(48px, 6.8vw, 86px); line-height: 1.08; margin: 0 0 38px; }
@@ -37,8 +33,6 @@
 .gallery-dialog-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
 @keyframes gallery-arrive { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 640px) {
-  .gallery-header { flex-wrap: wrap; padding-block: 22px; }
-  .gallery-header nav { width: 100%; justify-content: space-between; }
   .gallery-intro { padding-top: 56px; }
   .gallery-intro-bottom { align-items: start; flex-direction: column; }
   .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 12px; padding-bottom: 60px; }

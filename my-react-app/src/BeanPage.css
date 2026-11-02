@@ -112,6 +112,11 @@ a {
 .nav a:hover {
   opacity: 0.65;
 }
+.nav a[aria-current="page"] {
+  color: #e3b879;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
 .nav-cta {
   border: 1px solid #ffffffa6;
   padding: 13px 18px;

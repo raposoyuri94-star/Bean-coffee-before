@@ -1,0 +1,74 @@
+import { useEffect, useRef } from 'react'
+
+export function Brand() {
+  return <span className="brand">
+    <span className="brand-mark"><img src={import.meta.env.BASE_URL + 'Bean Logo.jpg'} alt="" /></span>
+    <span>BEAN <i>MAPUTO</i></span>
+  </span>
+}
+
+type SiteHeaderProps = {
+  page?: 'home' | 'gallery'
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHeaderProps) {
+  const headerRef = useRef<HTMLElement>(null)
+  const toggleRef = useRef<HTMLButtonElement>(null)
+  const home = page === 'home' ? '' : import.meta.env.BASE_URL
+  const close = () => onOpenChange(false)
+
+  useEffect(() => {
+    if (!open) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const mobile = window.matchMedia('(max-width: 760px)')
+    const handleResize = () => { if (!mobile.matches) onOpenChange(false) }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onOpenChange(false)
+        toggleRef.current?.focus()
+      }
+      if (event.key === 'Tab') {
+        const links = headerRef.current?.querySelectorAll<HTMLElement>('a, button')
+        const first = links?.[0]
+        const last = links?.[links.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last?.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first?.focus()
+        }
+      }
+    }
+
+    headerRef.current?.querySelector<HTMLElement>('.nav a')?.focus({ preventScroll: true })
+    document.addEventListener('keydown', handleKeyDown)
+    mobile.addEventListener('change', handleResize)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+      mobile.removeEventListener('change', handleResize)
+    }
+  }, [open, onOpenChange])
+
+  return <header className="header" ref={headerRef}>
+    <a href={home + '#top'} aria-label="Bean Maputo — página inicial" onClick={close}><Brand /></a>
+    <div className="mobile-menu-actions">
+      <a className="mobile-menu-link" href={home + '#menu'} onClick={close}>Menu</a>
+      <button className="menu-toggle" ref={toggleRef} type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => onOpenChange(!open)}>
+        <span /><span /><b>{open ? 'Fechar navegação' : 'Abrir navegação'}</b>
+      </button>
+    </div>
+    <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Navegação principal">
+      <a href={home + '#story'} onClick={close}>Our story</a>
+      <a href={home + '#menu'} onClick={close}>Menu</a>
+      <a href={import.meta.env.BASE_URL + 'galeria'} aria-current={page === 'gallery' ? 'page' : undefined} onClick={close}>Galeria</a>
+      <a href={home + '#visit'} onClick={close}>Visit us</a>
+      <a className="nav-cta" href={home + '#menu'} onClick={close}>Fazer pedido</a>
+    </nav>
+  </header>
+}

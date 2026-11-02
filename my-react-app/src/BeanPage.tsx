@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import SiteHeader, { Brand } from './SiteHeader'
 import { useInitialHashScroll } from './useInitialHashScroll'
 import './BeanPage.css'
 
@@ -148,61 +149,14 @@ function MenuItems({ items }: { items: string[][] }) {
     </article>) : <p className="menu-category-empty">Novidades em breve.</p>}
   </div>
 }
-function BeanIcon() {
-  return <img src={import.meta.env.BASE_URL + "Bean Logo.jpg"} alt="" aria-hidden="true" />
-}
-
-function Brand() {
-  return <span className="brand"><span className="brand-mark"><BeanIcon /></span><span>BEAN <i>MAPUTO</i></span></span>
-}
-
 export default function BeanPage() {
   const [open, setOpen] = useState(false)
-  const close = () => setOpen(false)
-  const headerRef = useRef<HTMLElement>(null)
-  const toggleRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const menuScrollTimeout = useRef<number | undefined>(undefined)
   const requestedCategory = useRef<number | null>(null)
   const [menuCategory, setMenuCategory] = useState(0)
   const [settledMenuCategory, setSettledMenuCategory] = useState(0)
   useInitialHashScroll()
-
-  useEffect(() => {
-    if (!open) return
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const mobile = window.matchMedia('(max-width: 760px)')
-    const handleResize = () => { if (!mobile.matches) setOpen(false) }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false)
-        toggleRef.current?.focus()
-      }
-      if (event.key === 'Tab') {
-        const links = headerRef.current?.querySelectorAll<HTMLElement>('a, button')
-        const first = links?.[0]
-        const last = links?.[links.length - 1]
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault()
-          last?.focus()
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault()
-          first?.focus()
-        }
-      }
-    }
-
-    headerRef.current?.querySelector<HTMLElement>('.nav a')?.focus({ preventScroll: true })
-    document.addEventListener('keydown', handleKeyDown)
-    mobile.addEventListener('change', handleResize)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', handleKeyDown)
-      mobile.removeEventListener('change', handleResize)
-    }
-  }, [open])
 
   useEffect(() => () => window.clearTimeout(menuScrollTimeout.current), [])
 
@@ -268,16 +222,7 @@ export default function BeanPage() {
   }
   return <div className="site-shell">
     <a className="skip-link" href="#top">Saltar para o conteúdo</a>
-    <header className="header" ref={headerRef}>
-      <a href="#top" aria-label="Bean Maputo — página inicial" onClick={close}><Brand /></a>
-      <div className="mobile-menu-actions">
-        <a className="mobile-menu-link" href="#menu" onClick={close}>Menu</a>
-      <button className="menu-toggle" ref={toggleRef} type="button" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen(!open)}><span/><span/><b>{open ? 'Fechar navegação' : 'Abrir navegação'}</b></button>
-      </div>
-      <nav id="site-nav" className={open ? 'nav open' : 'nav'} aria-label="Main navigation">
-        <a href="#story" onClick={close}>Our story</a><a href="#menu" onClick={close}>Menu</a><a href={import.meta.env.BASE_URL + "galeria"} onClick={close}>Galeria</a><a href="#visit" onClick={close}>Visit us</a><a className="nav-cta" href="#menu" onClick={close}>Fazer pedido</a>
-      </nav>
-    </header>
+    <SiteHeader open={open} onOpenChange={setOpen} />
     <main id="top" tabIndex={-1} inert={open}>
       <section className="hero-section">
         <img className="hero-image" src={import.meta.env.BASE_URL + "bean-hero-clean.png"} alt="Bean Maputo takeaway coffee and bag" fetchPriority="high"/><div className="hero-shade"/>
