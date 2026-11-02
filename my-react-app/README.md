@@ -6,7 +6,9 @@ O servidor de desenvolvimento abre em `http://127.0.0.1:5174/`. Este endereço e
 
 Os clientes podem adicionar itens do menu, ajustar quantidades e rever o pedido antes de abrir o WhatsApp com a mensagem preenchida. O cliente envia a mensagem no WhatsApp; abrir a conversa não confirma nem envia automaticamente o pedido.
 
-Copie `.env.example` para `.env.local`, defina `VITE_WHATSAPP_NUMBER` com o número internacional do café (apenas dígitos) e reinicie o servidor de desenvolvimento. O número aparece no resumo do pedido. Sem um número válido, o envio fica indisponível; não há número alternativo. Em produção, configure a mesma variável antes do build.
+O número público do café é definido por `VITE_WHATSAPP_NUMBER` no ficheiro `.env`, incluído no repositório para funcionar tanto localmente como nos builds publicados. Edite esse ficheiro com o número internacional (apenas dígitos) e reinicie o servidor de desenvolvimento ou faça um novo build. O número aparece no resumo do pedido. Sem um número válido, o botão fica visível mas desativado; não há número alternativo.
+
+`.env.local` serve apenas para substituições locais e não é publicado. Não defina aí um valor vazio para `VITE_WHATSAPP_NUMBER`, pois esse valor substituiria o número de `.env`. `.env.example` contém apenas instruções para estas substituições opcionais.
 
 As quantidades ficam guardadas no `sessionStorage` desta aba, para não se perderem ao visitar a galeria ou recarregar a página. Nome e observações não são guardados.
 

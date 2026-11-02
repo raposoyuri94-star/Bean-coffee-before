@@ -81,7 +81,10 @@ export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQ
         {whatsappUrl ? <>
           <a className="button order-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer">Continuar no WhatsApp</a>
           <p className="order-handoff-note">WhatsApp do Bean: <span className="order-recipient">+{recipient}</span><br />A mensagem abre pronta para rever e enviar.</p>
-        </> : <p className="order-handoff-note" role="status">Os pedidos pelo WhatsApp estão temporariamente indisponíveis. Pode continuar a escolher no menu.</p>}
+        </> : <>
+          <button className="button order-whatsapp" type="button" disabled>Continuar no WhatsApp</button>
+          <p className="order-handoff-note" role="status">Os pedidos pelo WhatsApp estão temporariamente indisponíveis. Pode continuar a escolher no menu.</p>
+        </>}
         <button type="button" className="order-browse" onClick={onBrowse}>Continuar a escolher</button>
       </> : <div className="order-empty">
         <p id="order-intro">O seu pedido ainda está vazio.</p>

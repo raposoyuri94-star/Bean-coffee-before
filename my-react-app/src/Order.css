@@ -274,6 +274,16 @@
 .order-whatsapp:hover {
   background: #29402b;
 }
+.order-whatsapp:disabled {
+  border: 0;
+  font-family: inherit;
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.order-whatsapp:disabled:hover {
+  background: var(--green);
+}
 .order-handoff-note {
   margin: 14px 0 0;
   color: #625c51;
