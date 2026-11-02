@@ -12,44 +12,6 @@ type MenuCategory = { id: string; name: string; items?: string[][]; groups?: Men
 
 const menuCategories: MenuCategory[] = [
   {
-    id: 'bebidas',
-    name: 'Bebidas',
-    groups: [
-      { name: 'Café', items: [
-  ['Americano', 'Expresso duplo com água quente', '200 MT'],
-  ['Hot chocolate', 'chocolate preto com creme de leite e chantilly', '200 MT'],
-  ['Expresso', 'Blend Brasil/Uganda 100% arábica', '260 MT'],
-  ['Expresso descafeinado', 'Opção sem cafeína', '130 MT'],
-  ['Cappuccino', 'Expresso duplo com 1/2 creme de leite', '250 MT'],
-  ['Macchiato', 'Expresso simples com creme de leite', '150 MT'],
-  ['Flat white', 'Expresso duplo com 1/3 creme de leite', '190 MT'],
-  ['Café latte', 'Expresso simples com creme de leite', '250 MT'],
-      ] },
-       { name: 'Chá natural', items: [
-      ['Balacate','', '180 MT'],
-      ['Menta', '', '180 MT'],
-      ['Matcha', '', '200 MT'],
-      ['Ginger', '', '200 MT'],
-    ] },
-    { name: 'Chá de saqueta', items: [
-      ['Rooibos','', '120 MT'],
-      ['Verde', '', '180 MT'],
-      ['Frutos vermelhos', '', '200 MT'],
-    ] },
-
-      { name: 'Bebidas frias', items: [
-      ['Água pequena', '',  '100 MT'],
-      ['Água das pedras', '', '150 MT'],
-       ['Água das pedras', 'Tangerina, frutos vermelhos, limão', '150 MT'],
-    ] },
-    { name: 'Soft drinks', items: [
-      ['Tónica zero', '',  '100 MT'],
-      ['Sprite zero', '', '120 MT'],
-      ['Coca-Cola Zero', '', '120 MT'],
-    ] },
-    ],
-  },
-  {
     id: 'pequeno-almoco',
     name: 'Pequeno-almoço',
     groups: [
@@ -136,6 +98,43 @@ const menuCategories: MenuCategory[] = [
       ] },
     ],
   },
+  {
+    id: 'bebidas',
+    name: 'Bebidas',
+    groups: [
+      { name: 'Café', items: [
+        ['Americano', 'Expresso duplo com água quente', '200 MT'],
+        ['Hot chocolate', 'chocolate preto com creme de leite e chantilly', '200 MT'],
+        ['Expresso', 'Blend Brasil/Uganda 100% arábica', '260 MT'],
+        ['Expresso descafeinado', 'Opção sem cafeína', '130 MT'],
+        ['Cappuccino', 'Expresso duplo com 1/2 creme de leite', '250 MT'],
+        ['Macchiato', 'Expresso simples com creme de leite', '150 MT'],
+        ['Flat white', 'Expresso duplo com 1/3 creme de leite', '190 MT'],
+        ['Café latte', 'Expresso simples com creme de leite', '250 MT'],
+      ] },
+      { name: 'Chá natural', items: [
+        ['Balacate', '', '180 MT'],
+        ['Menta', '', '180 MT'],
+        ['Matcha', '', '200 MT'],
+        ['Ginger', '', '200 MT'],
+      ] },
+      { name: 'Chá de saqueta', items: [
+        ['Rooibos', '', '120 MT'],
+        ['Verde', '', '180 MT'],
+        ['Frutos vermelhos', '', '200 MT'],
+      ] },
+      { name: 'Bebidas frias', items: [
+        ['Água pequena', '', '100 MT'],
+        ['Água das pedras', '', '150 MT'],
+        ['Água das pedras', 'Tangerina, frutos vermelhos, limão', '150 MT'],
+      ] },
+      { name: 'Soft drinks', items: [
+        ['Tónica zero', '', '100 MT'],
+        ['Sprite zero', '', '120 MT'],
+        ['Coca-Cola Zero', '', '120 MT'],
+      ] },
+    ],
+  },
 ]
 
 const locationQuery = encodeURIComponent('Bean Coffee Shop, 822 Av. Julius Nyerere, Maputo, Mozambique')
@@ -152,13 +151,14 @@ function MenuItems({ items }: { items: string[][] }) {
 export default function BeanPage() {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const menuScrollTimeout = useRef<number | undefined>(undefined)
+  const menuScrollFrame = useRef<number | undefined>(undefined)
+  const menuTouchActive = useRef(false)
   const requestedCategory = useRef<number | null>(null)
   const [menuCategory, setMenuCategory] = useState(0)
   const [settledMenuCategory, setSettledMenuCategory] = useState(0)
   useInitialHashScroll()
 
-  useEffect(() => () => window.clearTimeout(menuScrollTimeout.current), [])
+  useEffect(() => () => window.cancelAnimationFrame(menuScrollFrame.current ?? 0), [])
 
   // Keep slides laid out during a swipe; resize only after scrolling settles.
   useLayoutEffect(() => {
@@ -180,10 +180,19 @@ export default function BeanPage() {
       }
     }
     updateLayout()
-    const observer = new ResizeObserver(updateLayout)
-    observer.observe(menu)
+    let resizeFrame = 0
+    const observer = new ResizeObserver(() => {
+      if (resizeFrame) return
+      resizeFrame = window.requestAnimationFrame(() => {
+        resizeFrame = 0
+        updateLayout()
+      })
+    })
     observer.observe(slide)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      window.cancelAnimationFrame(resizeFrame)
+    }
   }, [settledMenuCategory])
 
   const visibleMenuCategory = () => {
@@ -195,6 +204,7 @@ export default function BeanPage() {
   }
 
   const settleMenuCategory = (index: number) => {
+    if (menuTouchActive.current) return
     const menu = menuRef.current
     // Return to the category controls before shortening a menu scrolled past its start.
     if (index !== settledMenuCategory && menu && menu.getBoundingClientRect().top < 0) {
@@ -206,21 +216,59 @@ export default function BeanPage() {
   }
 
   const syncMenuCategory = () => {
-    window.clearTimeout(menuScrollTimeout.current)
+    stopMenuSettlement()
     settleMenuCategory(visibleMenuCategory())
+  }
+
+  const stopMenuSettlement = () => {
+    window.cancelAnimationFrame(menuScrollFrame.current ?? 0)
+    menuScrollFrame.current = undefined
+  }
+
+  // Wait for both the carousel and the page to stop, including touch momentum.
+  const scheduleMenuSettlement = () => {
+    const menu = menuRef.current
+    if (!menu || menuTouchActive.current || menuScrollFrame.current !== undefined) return
+
+    let previousLeft = menu.scrollLeft
+    let previousTop = window.scrollY
+    let stableSince: number | null = null
+    const checkPosition = (now: number) => {
+      if (menuTouchActive.current) {
+        menuScrollFrame.current = undefined
+        return
+      }
+      if (stableSince === null || Math.abs(menu.scrollLeft - previousLeft) > 0.1 || Math.abs(window.scrollY - previousTop) > 0.1) {
+        previousLeft = menu.scrollLeft
+        previousTop = window.scrollY
+        stableSince = now
+      }
+      if (now - stableSince >= 150) {
+        syncMenuCategory()
+        return
+      }
+      menuScrollFrame.current = window.requestAnimationFrame(checkPosition)
+    }
+    menuScrollFrame.current = window.requestAnimationFrame(checkPosition)
+  }
+
+  const finishMenuTouch = (remainingTouches: number) => {
+    menuTouchActive.current = remainingTouches > 0
+    stopMenuSettlement()
+    scheduleMenuSettlement()
   }
 
   const slideMenu = (index: number) => {
     const menu = menuRef.current
     const slide = menu?.children[index]
     if (!menu || !slide) return
-    window.clearTimeout(menuScrollTimeout.current)
+    stopMenuSettlement()
     requestedCategory.current = index
     setMenuCategory(index)
     const left = menu.scrollLeft + slide.getBoundingClientRect().left - menu.getBoundingClientRect().left
     if (Math.abs(left - menu.scrollLeft) < 1) {
       menu.scrollTo({ left, behavior: 'instant' })
-      settleMenuCategory(index)
+      scheduleMenuSettlement()
       return
     }
     menu.scrollTo({
@@ -263,10 +311,16 @@ export default function BeanPage() {
           aria-describedby="menu-category-hint"
           onScroll={() => {
             if (requestedCategory.current === null) setMenuCategory(visibleMenuCategory())
-            window.clearTimeout(menuScrollTimeout.current)
-            menuScrollTimeout.current = window.setTimeout(syncMenuCategory, 150)
+            scheduleMenuSettlement()
           }}
-          onScrollEnd={syncMenuCategory}
+          onScrollEnd={scheduleMenuSettlement}
+          onTouchStart={() => {
+            menuTouchActive.current = true
+            requestedCategory.current = null
+            stopMenuSettlement()
+          }}
+          onTouchEnd={event => finishMenuTouch(event.touches.length)}
+          onTouchCancel={event => finishMenuTouch(event.touches.length)}
           onPointerDown={() => { requestedCategory.current = null }}
           onWheel={() => { requestedCategory.current = null }}
           onKeyDown={event => {
