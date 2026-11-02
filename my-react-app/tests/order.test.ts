@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createOrderCatalog, formatMoney, menuItemId, orderMessage, orderTotal, restoreOrder, whatsAppOrderUrl } from '../src/order.ts'
+import { createOrderCatalog, formatMoney, menuItemId, normalizeWhatsAppNumber, orderMessage, orderTotal, restoreOrder, whatsAppOrderUrl } from '../src/order.ts'
 import type { MenuEntry, OrderLine } from '../src/order.ts'
 
 const toast: MenuEntry = ['Tostas de abacate', 'Pão multigrãos e abacate', '430 MT']
@@ -66,11 +66,28 @@ test('empty optional fields do not add blank name or note labels', () => {
 test('WhatsApp links preserve accents, ampersands, line breaks, and the recipient', () => {
   const name = 'João & Ana'
   const notes = 'Limão + menta? 50% gelo\nSem açúcar '
-  const url = new URL(whatsAppOrderUrl('+258 84 123 45 67', lines, name, notes))
+  const link = whatsAppOrderUrl('+258 84 123 45 67', lines, name, notes)
+  assert.ok(link)
+  const url = new URL(link)
   assert.equal(url.origin, 'https://wa.me')
   assert.equal(url.pathname, '/258841234567')
   assert.equal(url.searchParams.get('text'), orderMessage(lines, name, notes))
   assert.equal([...url.searchParams.keys()].length, 1)
+})
+
+test('missing, invalid, or placeholder numbers never open a different WhatsApp chat', () => {
+  for (const phone of ['', '   ', 'abc', '258123456', '0123456789', '1234567890123456']) {
+    assert.equal(normalizeWhatsAppNumber(phone), null)
+    assert.equal(whatsAppOrderUrl(phone, lines, '', ''), null)
+  }
+})
+
+test('the configured number is used without a fallback, and empty orders cannot be sent', () => {
+  assert.equal(normalizeWhatsAppNumber(' +258 84 3341600 '), '258843341600')
+  const link = whatsAppOrderUrl(' +258 84 3341600 ', lines, '', '')
+  assert.ok(link)
+  assert.equal(new URL(link).pathname, '/258843341600')
+  assert.equal(whatsAppOrderUrl('258843341600', [], '', ''), null)
 })
 
 test('invalid menu prices cannot silently become free items', () => {

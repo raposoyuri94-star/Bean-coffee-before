@@ -147,7 +147,7 @@ const locationQuery = encodeURIComponent('Bean Coffee Shop, 822 Av. Julius Nyere
 const orderCatalog = createOrderCatalog(menuCategories.flatMap(category => category.groups
   ? category.groups.flatMap(group => group.items)
   : category.items ?? []))
-const orderPhone = import.meta.env.VITE_WHATSAPP_NUMBER || '258123456'
+const orderPhone = import.meta.env.VITE_WHATSAPP_NUMBER ?? ''
 
 function MenuItems({ items, quantities, onQuantityChange }: {
   items: MenuEntry[]

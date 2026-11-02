@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import QuantityControl from './QuantityControl'
-import { formatMoney, orderTotal, whatsAppOrderUrl } from './order'
+import { formatMoney, normalizeWhatsAppNumber, orderTotal, whatsAppOrderUrl } from './order'
 import type { OrderLine } from './order'
 
 type OrderDialogProps = {
@@ -16,6 +16,8 @@ export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQ
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [customerName, setCustomerName] = useState('')
   const [notes, setNotes] = useState('')
+  const recipient = normalizeWhatsAppNumber(phone)
+  const whatsappUrl = whatsAppOrderUrl(phone, lines, customerName, notes)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -76,8 +78,10 @@ export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQ
           <textarea id="order-notes" name="order-notes" autoComplete="off" rows={3} maxLength={500} placeholder="Alergias, preferências ou outras indicações…" value={notes} onChange={event => setNotes(event.target.value)} />
         </div>
         <div className="order-total" aria-live="polite"><span>Total dos itens</span><strong>{formatMoney(orderTotal(lines))}</strong></div>
-        <a className="button order-whatsapp" href={whatsAppOrderUrl(phone, lines, customerName, notes)} target="_blank" rel="noopener noreferrer">Continuar no WhatsApp</a>
-        <p className="order-handoff-note">O WhatsApp abre com a mensagem pronta para rever e enviar.</p>
+        {whatsappUrl ? <>
+          <a className="button order-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer">Continuar no WhatsApp</a>
+          <p className="order-handoff-note">WhatsApp do Bean: <span className="order-recipient">+{recipient}</span><br />A mensagem abre pronta para rever e enviar.</p>
+        </> : <p className="order-handoff-note" role="status">Os pedidos pelo WhatsApp estão temporariamente indisponíveis. Pode continuar a escolher no menu.</p>}
         <button type="button" className="order-browse" onClick={onBrowse}>Continuar a escolher</button>
       </> : <div className="order-empty">
         <p id="order-intro">O seu pedido ainda está vazio.</p>

@@ -280,6 +280,10 @@
   font-size: 12px;
   line-height: 1.6;
 }
+.order-recipient {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
 .order-dialog .order-browse:not(.button) {
   margin-top: 6px;
 }

@@ -72,7 +72,14 @@ export function orderMessage(lines: OrderLine[], customerName: string, notes: st
   return message.join('\n')
 }
 
+export function normalizeWhatsAppNumber(phone: string) {
+  const number = phone.replace(/\D/g, '')
+  if (!/^[1-9]\d{6,14}$/.test(number) || number === '258123456') return null
+  return number
+}
+
 export function whatsAppOrderUrl(phone: string, lines: OrderLine[], customerName: string, notes: string) {
-  const recipient = phone.replace(/\D/g, '') || '258123456'
+  const recipient = normalizeWhatsAppNumber(phone)
+  if (!recipient || !lines.length) return null
   return `https://wa.me/${recipient}?text=${encodeURIComponent(orderMessage(lines, customerName, notes))}`
 }
