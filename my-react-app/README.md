@@ -1,5 +1,13 @@
 # React + TypeScript + Vite
 
+## Pedidos pelo WhatsApp
+
+Os clientes podem adicionar itens do menu, ajustar quantidades e rever o pedido antes de abrir o WhatsApp com a mensagem preenchida. O cliente envia a mensagem no WhatsApp; abrir a conversa não confirma nem envia automaticamente o pedido.
+
+Copie `.env.example` para `.env.local`, defina `VITE_WHATSAPP_NUMBER` com o número internacional do café (apenas dígitos) e reinicie o servidor de desenvolvimento. O valor atual `258123456` é provisório. Em produção, configure a mesma variável antes do build.
+
+As quantidades ficam guardadas no `sessionStorage` desta aba, para não se perderem ao visitar a galeria ou recarregar a página. Nome e observações não são guardados.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

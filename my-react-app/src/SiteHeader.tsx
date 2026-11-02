@@ -11,11 +11,12 @@ type SiteHeaderProps = {
   page?: 'home' | 'gallery'
   open: boolean
   onOpenChange: (open: boolean) => void
+  onStartOrder?: () => void
 }
 
 type SectionId = 'story' | 'menu' | 'visit'
 
-export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHeaderProps) {
+export default function SiteHeader({ page = 'home', open, onOpenChange, onStartOrder }: SiteHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
   const [activeSection, setActiveSection] = useState<SectionId | null>(null)
@@ -115,7 +116,9 @@ export default function SiteHeader({ page = 'home', open, onOpenChange }: SiteHe
       <a href={home + '#menu'} aria-current={page === 'home' && activeSection === 'menu' ? 'location' : undefined} onClick={close}>Menu</a>
       <a href={import.meta.env.BASE_URL + 'galeria'} aria-current={page === 'gallery' ? 'page' : undefined} onClick={close}>Galeria</a>
       <a href={home + '#visit'} aria-current={page === 'home' && activeSection === 'visit' ? 'location' : undefined} onClick={close}>Visit us</a>
-      <a className="nav-cta" href={home + '#menu'} onClick={close}>Fazer pedido</a>
+      {onStartOrder
+        ? <button className="nav-cta" type="button" aria-haspopup="dialog" aria-controls="order-dialog" onClick={() => { close(); onStartOrder() }}>Fazer pedido</button>
+        : <a className="nav-cta" href={home + '#menu'} onClick={close}>Fazer pedido</a>}
     </nav>
   </header>
 }

@@ -1,14 +1,20 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import SiteHeader, { Brand } from './SiteHeader'
+import OrderDialog from './OrderDialog'
+import QuantityControl from './QuantityControl'
+import { createOrderCatalog, formatMoney, menuItemId } from './order'
+import type { MenuEntry, OrderQuantities } from './order'
+import { useOrderCart } from './useOrderCart'
 import { useInitialHashScroll } from './useInitialHashScroll'
 import './BeanPage.css'
+import './Order.css'
 
 
 
 // Adicione itens como ['Nome', 'Descrição', 'Preço'] em items.
 // Em cada secção, cada grupo tem a sua própria lista items.
-type MenuGroup = { name: string; items: string[][] }
-type MenuCategory = { id: string; name: string; items?: string[][]; groups?: MenuGroup[] }
+type MenuGroup = { name: string; items: MenuEntry[] }
+type MenuCategory = { id: string; name: string; items?: MenuEntry[]; groups?: MenuGroup[] }
 
 const menuCategories: MenuCategory[] = [
   {
@@ -138,18 +144,33 @@ const menuCategories: MenuCategory[] = [
 ]
 
 const locationQuery = encodeURIComponent('Bean Coffee Shop, 822 Av. Julius Nyerere, Maputo, Mozambique')
+const orderCatalog = createOrderCatalog(menuCategories.flatMap(category => category.groups
+  ? category.groups.flatMap(group => group.items)
+  : category.items ?? []))
+const orderPhone = import.meta.env.VITE_WHATSAPP_NUMBER || '258123456'
 
-function MenuItems({ items }: { items: string[][] }) {
+function MenuItems({ items, quantities, onQuantityChange }: {
+  items: MenuEntry[]
+  quantities: OrderQuantities
+  onQuantityChange: (id: string, quantity: number) => void
+}) {
   return <div className="menu-list">
-    {items.length ? items.map((item, i) => <article className="menu-item" key={`${item[0]}-${item[1]}`}>
+    {items.length ? items.map((item, i) => {
+      const id = menuItemId(item)
+      return <article className="menu-item" key={id}>
       <span className="item-number">{String(i + 1).padStart(2, '0')}</span>
       <div><h5>{item[0]}</h5>{item[1] && <p>{item[1]}</p>}</div>
-      <strong>{item[2]}</strong>
-    </article>) : <p className="menu-category-empty">Novidades em breve.</p>}
+      <div className="menu-item-order">
+        <strong>{item[2]}</strong>
+        <QuantityControl name={orderCatalog.get(id)?.orderName ?? item[0]} quantity={quantities[id] ?? 0} onChange={quantity => onQuantityChange(id, quantity)} />
+      </div>
+    </article>}) : <p className="menu-category-empty">Novidades em breve.</p>}
   </div>
 }
 export default function BeanPage() {
   const [open, setOpen] = useState(false)
+  const [orderOpen, setOrderOpen] = useState(false)
+  const order = useOrderCart(orderCatalog)
   const menuRef = useRef<HTMLDivElement>(null)
   const menuScrollFrame = useRef<number | undefined>(undefined)
   const menuTouchActive = useRef(false)
@@ -157,6 +178,14 @@ export default function BeanPage() {
   const [menuCategory, setMenuCategory] = useState(0)
   const [settledMenuCategory, setSettledMenuCategory] = useState(0)
   useInitialHashScroll()
+
+  const browseMenu = () => {
+    setOrderOpen(false)
+    window.requestAnimationFrame(() => {
+      document.getElementById('menu')?.scrollIntoView({ behavior: 'instant', block: 'start' })
+      document.querySelector<HTMLElement>('.menu-category-controls button[aria-pressed="true"]')?.focus({ preventScroll: true })
+    })
+  }
 
   useEffect(() => () => window.cancelAnimationFrame(menuScrollFrame.current ?? 0), [])
 
@@ -276,9 +305,9 @@ export default function BeanPage() {
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     })
   }
-  return <div className="site-shell">
+  return <div className={order.count ? 'site-shell has-order' : 'site-shell'}>
     <a className="skip-link" href="#top">Saltar para o conteúdo</a>
-    <SiteHeader open={open} onOpenChange={setOpen} />
+    <SiteHeader open={open} onOpenChange={setOpen} onStartOrder={() => setOrderOpen(true)} />
     <main id="top" tabIndex={-1} inert={open}>
       <section className="hero-section">
         <img className="hero-image" src={import.meta.env.BASE_URL + "bean-hero-clean.png"} alt="Bean Maputo takeaway coffee and bag" fetchPriority="high"/><div className="hero-shade"/>
@@ -306,7 +335,7 @@ export default function BeanPage() {
             aria-controls={'menu-' + category.id} onClick={() => slideMenu(index)}
           >{category.name}</button>)}
         </div>
-        <p className="menu-category-hint" id="menu-category-hint">Escolha uma categoria ou deslize para explorar.</p>
+        <p className="menu-category-hint" id="menu-category-hint">Escolha uma categoria ou deslize. Adicione os seus favoritos ao pedido.</p>
         <div className="menu-categories" ref={menuRef} role="region" aria-label="Secções do menu" tabIndex={0}
           aria-describedby="menu-category-hint"
           onScroll={() => {
@@ -334,12 +363,12 @@ export default function BeanPage() {
             event.preventDefault()
             slideMenu(index)
           }}>
-          {menuCategories.map((category, index) => <section className="menu-category" data-active={menuCategory === index} aria-hidden={menuCategory !== index} id={'menu-' + category.id} key={category.id} aria-labelledby={'heading-' + category.id}>
+          {menuCategories.map((category, index) => <section className="menu-category" data-active={menuCategory === index} aria-hidden={menuCategory !== index} inert={menuCategory !== index} id={'menu-' + category.id} key={category.id} aria-labelledby={'heading-' + category.id}>
             <h3 className="menu-category-title" id={'heading-' + category.id}>{category.name}</h3>
             {category.groups ? category.groups.map((group, index) => <section className="menu-subcategory" key={group.name} aria-labelledby={category.id + '-group-' + index}>
               <h4 className="menu-subcategory-title" id={category.id + '-group-' + index}>{group.name}</h4>
-              <MenuItems items={group.items} />
-            </section>) : <MenuItems items={category.items ?? []} />}
+              <MenuItems items={group.items} quantities={order.quantities} onQuantityChange={order.setQuantity} />
+            </section>) : <MenuItems items={category.items ?? []} quantities={order.quantities} onQuantityChange={order.setQuantity} />}
           </section>)}
         </div>
         <aside className="menu-notes" aria-labelledby="menu-notes-title">
@@ -349,7 +378,7 @@ export default function BeanPage() {
             <p className="menu-notes-extras"><span>Extras</span> Consulte os preços com o empregado de mesa antes de pedir.</p>
           </div>
         </aside>
-        <a className="button button-gold" href="https://wa.me/258123456?text=Coffee%20order">Start an order</a>
+        <button id="start-order" className="button button-gold order-start" type="button" onClick={() => setOrderOpen(true)}>{order.count ? 'Rever o pedido' : 'Fazer pedido'}</button>
       </section>
       <section className="visit-section" id="visit">
         <div><p className="section-tag">Venha dizer olá</p><h2>Uma boa xícara está<br/>mais perto do que você imagina.</h2></div>
@@ -357,5 +386,10 @@ export default function BeanPage() {
       </section>
     </main>
 <footer inert={open}><a href="#top"><Brand/></a><p>Bom café. Boa companhia. Maputo.</p><p>© 2026 Bean Maputo</p></footer>
+    {order.count > 0 && <button className="order-cart-bar" type="button" inert={open} aria-haspopup="dialog" aria-label={`Ver pedido: ${order.count} ${order.count === 1 ? 'artigo' : 'artigos'}, ${formatMoney(order.total)}`} onClick={() => setOrderOpen(true)}>
+      <span className="order-cart-count" aria-hidden="true">{order.count}</span><span>Ver pedido</span><strong>{formatMoney(order.total)}</strong>
+    </button>}
+    <p className="order-announcement" role="status">{order.count ? `${order.count} ${order.count === 1 ? 'artigo' : 'artigos'} no pedido. Total: ${formatMoney(order.total)}.` : 'O pedido está vazio.'}</p>
+    <OrderDialog open={orderOpen} lines={order.lines} phone={orderPhone} onClose={() => setOrderOpen(false)} onBrowse={browseMenu} onQuantityChange={order.setQuantity} />
   </div>
 }
