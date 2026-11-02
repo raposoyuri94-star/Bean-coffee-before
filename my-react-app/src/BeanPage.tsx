@@ -158,13 +158,14 @@ function MenuItems({ items, quantities, onQuantityChange }: {
     {items.length ? items.map((item, i) => {
       const id = menuItemId(item)
       return <article className="menu-item" key={id}>
-      <span className="item-number">{String(i + 1).padStart(2, '0')}</span>
-      <div><h5>{item[0]}</h5>{item[1] && <p>{item[1]}</p>}</div>
-      <div className="menu-item-order">
-        <strong>{item[2]}</strong>
-        <QuantityControl name={orderCatalog.get(id)?.orderName ?? item[0]} quantity={quantities[id] ?? 0} onChange={quantity => onQuantityChange(id, quantity)} />
-      </div>
-    </article>}) : <p className="menu-category-empty">Novidades em breve.</p>}
+        <span className="item-number">{String(i + 1).padStart(2, '0')}</span>
+        <div><h5>{item[0]}</h5>{item[1] && <p>{item[1]}</p>}</div>
+        <div className="menu-item-order">
+          <strong>{item[2]}</strong>
+          <QuantityControl name={orderCatalog.get(id)?.orderName ?? item[0]} quantity={quantities[id] ?? 0} onChange={quantity => onQuantityChange(id, quantity)} />
+        </div>
+      </article>
+    }) : <p className="menu-category-empty">Novidades em breve.</p>}
   </div>
 }
 export default function BeanPage() {
