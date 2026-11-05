@@ -1,11 +1,12 @@
-export type MenuEntry = [name: string, description: string, price: string]
-
-export type OrderProduct = {
+export type MenuProduct = {
   id: string
   name: string
   description: string
-  orderName: string
   price: number
+}
+
+export type OrderProduct = MenuProduct & {
+  orderName: string
 }
 
 export type OrderLine = { product: OrderProduct; quantity: number }
@@ -16,19 +17,30 @@ export const ORDER_STORAGE_KEY = 'bean-order-v1'
 
 const money = new Intl.NumberFormat('pt-MZ', { maximumFractionDigits: 2 })
 export const formatMoney = (amount: number) => `${money.format(amount)} MT`
-export const menuItemId = (item: MenuEntry) => JSON.stringify(item)
 
-export function createOrderCatalog(items: MenuEntry[]): ReadonlyMap<string, OrderProduct> {
+export function createOrderCatalog(items: MenuProduct[]): ReadonlyMap<string, OrderProduct> {
   const products = new Map<string, OrderProduct>()
   for (const item of items) {
-    const id = menuItemId(item)
-    const price = Number(item[2].replace(/\s*MT$/i, '').replace(/\s/g, '').replace(',', '.'))
-    if (!Number.isFinite(price) || price < 0) throw new Error(`Preço inválido: ${item[0]}`)
-    products.set(id, { id, name: item[0], description: item[1], orderName: item[0], price })
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.id)) throw new Error(`ID inválido: ${item.id}`)
+    if (!item.name.trim()) throw new Error(`Nome inválido: ${item.id}`)
+    if (typeof item.price !== 'number' || !Number.isFinite(item.price) || item.price < 0) {
+      throw new Error(`Preço inválido: ${item.name}`)
+    }
+    const existing = products.get(item.id)
+    if (
+      existing &&
+      (existing.name !== item.name ||
+        existing.description !== item.description ||
+        existing.price !== item.price)
+    ) {
+      throw new Error(`ID duplicado com dados diferentes: ${item.id}`)
+    }
+    products.set(item.id, { ...item, orderName: item.name })
   }
   // Identical dishes listed in multiple groups share one cart line. Variants keep their details.
   const nameCounts = new Map<string, number>()
-  for (const product of products.values()) nameCounts.set(product.name, (nameCounts.get(product.name) ?? 0) + 1)
+  for (const product of products.values())
+    nameCounts.set(product.name, (nameCounts.get(product.name) ?? 0) + 1)
   for (const product of products.values()) {
     if ((nameCounts.get(product.name) ?? 0) > 1 && product.description) {
       product.orderName = `${product.name} (${product.description})`
@@ -37,15 +49,47 @@ export function createOrderCatalog(items: MenuEntry[]): ReadonlyMap<string, Orde
   return products
 }
 
-export function restoreOrder(value: string | null, catalog: ReadonlyMap<string, OrderProduct>): OrderQuantities {
+export function restoreOrder(
+  value: string | null,
+  catalog: ReadonlyMap<string, OrderProduct>
+): OrderQuantities {
   if (!value) return {}
   try {
     const stored: unknown = JSON.parse(value)
     if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return {}
     const restored: OrderQuantities = {}
     for (const [id, quantity] of Object.entries(stored)) {
-      if (catalog.has(id) && typeof quantity === 'number' && Number.isInteger(quantity) && quantity > 0 && quantity <= MAX_ORDER_QUANTITY) {
+      if (
+        catalog.has(id) &&
+        typeof quantity === 'number' &&
+        Number.isInteger(quantity) &&
+        quantity > 0 &&
+        quantity <= MAX_ORDER_QUANTITY
+      ) {
         restored[id] = quantity
+      }
+    }
+    // Upgrade carts saved before products had stable IDs. Use today's price.
+    // Prefer an existing stable entry if both formats are present in storage.
+    for (const [legacyId, quantity] of Object.entries(stored)) {
+      if (
+        !legacyId.startsWith('[') ||
+        typeof quantity !== 'number' ||
+        !Number.isInteger(quantity) ||
+        quantity <= 0 ||
+        quantity > MAX_ORDER_QUANTITY
+      )
+        continue
+      try {
+        const entry: unknown = JSON.parse(legacyId)
+        if (!Array.isArray(entry) || entry.length !== 3 || !entry.every((value) => typeof value === 'string'))
+          continue
+        const product = Array.from(catalog.values()).find(
+          (item) => item.name === entry[0] && item.description === entry[1]
+        )
+        if (product && restored[product.id] === undefined) restored[product.id] = quantity
+      } catch {
+        // A damaged legacy entry must not discard the rest of the order.
       }
     }
     return restored
@@ -62,7 +106,10 @@ export function orderMessage(lines: OrderLine[], customerName: string, notes: st
   const message = [
     'Olá, Bean! Gostaria de fazer este pedido:',
     '',
-    ...lines.map(({ product, quantity }) => `${quantity} × ${product.orderName} — ${formatMoney(product.price * quantity)}`),
+    ...lines.map(
+      ({ product, quantity }) =>
+        `${quantity} × ${product.orderName} — ${formatMoney(product.price * quantity)}`
+    ),
     '',
     `Total dos itens: ${formatMoney(orderTotal(lines))}`,
   ]

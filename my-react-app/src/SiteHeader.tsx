@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import './SiteHeader.css'
 
 export function Brand() {
   return <span className="brand">

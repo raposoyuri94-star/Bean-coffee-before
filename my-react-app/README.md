@@ -1,87 +1,95 @@
-# React + TypeScript + Vite
+﻿# Bean Maputo
 
-## Pedidos pelo WhatsApp
+Site do café com menu, galeria, localização e pedidos pelo WhatsApp.
 
-O servidor de desenvolvimento abre em `http://127.0.0.1:5174/`. Este endereço explícito evita confundir o projeto com outra aplicação em `localhost:5173`.
+## Desenvolvimento
 
-Os clientes podem adicionar itens do menu, ajustar quantidades e rever o pedido antes de abrir o WhatsApp com a mensagem preenchida. O cliente envia a mensagem no WhatsApp; abrir a conversa não confirma nem envia automaticamente o pedido.
-
-O número público do café é definido por `VITE_WHATSAPP_NUMBER` no ficheiro `.env`, incluído no repositório para funcionar tanto localmente como nos builds publicados. Edite esse ficheiro com o número internacional (apenas dígitos) e reinicie o servidor de desenvolvimento ou faça um novo build. O número aparece no resumo do pedido. Sem um número válido, o botão fica visível mas desativado; não há número alternativo.
-
-`.env.local` serve apenas para substituições locais e não é publicado. Não defina aí um valor vazio para `VITE_WHATSAPP_NUMBER`, pois esse valor substituiria o número de `.env`. `.env.example` contém apenas instruções para estas substituições opcionais.
-
-As quantidades ficam guardadas no `sessionStorage` desta aba, para não se perderem ao visitar a galeria ou recarregar a página. Nome e observações não são guardados.
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```sh
+npm ci
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Abra `http://127.0.0.1:5174/`. Este endereço evita confundir o projeto com outra
+aplicação em `localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Estrutura
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- `src/BeanPage.tsx`: composição da página inicial e estado do pedido.
+- `src/data/menu.ts`: categorias, pratos, IDs permanentes e preços numéricos em
+  MT.
+- `src/menu/MenuSection.tsx`: apresentação das categorias e dos pratos.
+- `src/menu/useMenuCarousel.ts`: navegação, gestos e altura do menu, incluindo
+  as correções para Safari.
+- `src/order.ts` e `src/useOrderCart.ts`: catálogo, cálculos, mensagem e
+  armazenamento do pedido.
+- `src/OrderDialog.tsx` e `src/QuantityControl.tsx`: resumo e controlos de
+  quantidade.
+- `src/SiteHeader.tsx`: navegação partilhada e menu móvel.
+- `src/GalleryPage.tsx`: galeria e ampliação de fotografias.
+- `src/index.css`: tema, tipografia e estilos globais. Os restantes estilos
+  ficam junto do componente ou página correspondente.
+- `assets/originals/`: imagens de origem; `public/`: versões otimizadas
+  publicadas.
+- `tests/order.test.ts`: regras de preços, pedidos, recuperação de dados e
+  WhatsApp.
+- `tests/browser/`: verificações da experiência no Chromium e no WebKit com
+  dimensões de iPhone.
 
+## Editar o menu
+
+Cada prato tem `id`, `name`, `description` e `price`. O preço é um número, por
+exemplo `price: 430`, sem texto `MT` nem separadores de milhares. A formatação é
+feita apenas na apresentação.
+
+Mantenha o `id` quando alterar o nome, a descrição ou o preço. Use o mesmo ID
+para o mesmo prato repetido em dois grupos; use IDs diferentes para variantes.
+IDs repetidos com dados diferentes ou preços inválidos impedem a criação do
+catálogo.
+
+As quantidades ficam no `sessionStorage` da aba e sobrevivem a recarregamentos e
+visitas à galeria. Pedidos antigos são migrados para os IDs permanentes com os
+preços atuais. Nome e observações não são guardados.
+
+## Número do WhatsApp
+
+O número público do café está em `VITE_WHATSAPP_NUMBER` no ficheiro `.env`,
+incluído no repositório para funcionar localmente e no site publicado. Use o
+número internacional com indicativo do país. Depois de o alterar, reinicie o
+servidor ou faça um novo build.
+
+`.env.local` permite substituições apenas locais e não é publicado. Um valor
+vazio nesse ficheiro também substitui o número de `.env`. `.env.example` explica
+esta configuração.
+
+O cliente escolhe os itens e revê o pedido. O botão abre a conversa com a
+mensagem preenchida; o cliente ainda precisa de a enviar no WhatsApp. Abrir a
+conversa não confirma o pedido. Sem um número válido, o botão continua visível
+mas fica desativado. Não existe número alternativo.
+
+## Verificação e publicação
+
+Instale os navegadores de teste uma vez:
+
+```sh
+npx playwright install chromium webkit
 ```
+
+Depois execute:
+
+```sh
+npm run check
+```
+
+Este comando verifica lint, testes das regras de pedidos, build de produção e
+testes de navegador. Os testes abrem uma pré-visualização isolada em
+`127.0.0.1:4175`, sem usar o servidor de desenvolvimento. Os links do WhatsApp
+são intercetados e não enviam mensagens.
+
+Os testes do menu cobrem mudanças de categoria no fundo da lista, gestos
+mantidos, movimento vertical, teclado, redimensionamento e ecrãs estreitos. O
+WebKit simula os eventos de toque e a região de deslocamento; uma verificação
+num iPhone físico continua a ser útil para gestos nativos do Safari.
+
+O workflow `.github/workflows/pages.yml` executa estas verificações antes de
+publicar no GitHub Pages, incluindo o caminho base do repositório. A galeria
+também aceita acesso direto a `/galeria/`.

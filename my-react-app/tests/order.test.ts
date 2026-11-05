@@ -1,16 +1,40 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { createOrderCatalog, formatMoney, menuItemId, normalizeWhatsAppNumber, orderMessage, orderTotal, restoreOrder, whatsAppOrderUrl } from '../src/order.ts'
-import type { MenuEntry, OrderLine } from '../src/order.ts'
+import {
+  createOrderCatalog,
+  formatMoney,
+  normalizeWhatsAppNumber,
+  orderMessage,
+  orderTotal,
+  restoreOrder,
+  whatsAppOrderUrl,
+} from '../src/order.ts'
+import type { MenuProduct, OrderLine } from '../src/order.ts'
+import { menuCategories } from '../src/data/menu.ts'
 
-const toast: MenuEntry = ['Tostas de abacate', 'Pão multigrãos e abacate', '430 MT']
-const coffee: MenuEntry = ['Americano', 'Expresso duplo com água quente', '200 MT']
-const water: MenuEntry = ['Água das pedras', '', '150 MT']
-const flavouredWater: MenuEntry = ['Água das pedras', 'Tangerina, frutos vermelhos, limão', '150 MT']
+const toast: MenuProduct = {
+  id: 'avocado-toast',
+  name: 'Tostas de abacate',
+  description: 'Pão multigrãos e abacate',
+  price: 430,
+}
+const coffee: MenuProduct = {
+  id: 'americano',
+  name: 'Americano',
+  description: 'Expresso duplo com água quente',
+  price: 200,
+}
+const water: MenuProduct = { id: 'water', name: 'Água das pedras', description: '', price: 150 }
+const flavouredWater: MenuProduct = {
+  id: 'water-flavoured',
+  name: 'Água das pedras',
+  description: 'Tangerina, frutos vermelhos, limão',
+  price: 150,
+}
 const catalog = createOrderCatalog([toast, coffee, water, flavouredWater, toast])
 const lines: OrderLine[] = [
-  { product: catalog.get(menuItemId(toast))!, quantity: 2 },
-  { product: catalog.get(menuItemId(coffee))!, quantity: 3 },
+  { product: catalog.get(toast.id)!, quantity: 2 },
+  { product: catalog.get(coffee.id)!, quantity: 3 },
 ]
 
 test('totals use quantities and menu prices across food and drinks', () => {
@@ -20,31 +44,41 @@ test('totals use quantities and menu prices across food and drinks', () => {
 
 test('the same dish in two menu groups shares a product', () => {
   assert.equal(catalog.size, 4)
-  assert.equal(catalog.get(menuItemId(toast))?.name, 'Tostas de abacate')
+  assert.equal(catalog.get(toast.id)?.name, 'Tostas de abacate')
 })
 
 test('similarly named drink variants stay distinct in the WhatsApp message', () => {
-  const plain = catalog.get(menuItemId(water))!
-  const flavoured = catalog.get(menuItemId(flavouredWater))!
+  const plain = catalog.get(water.id)!
+  const flavoured = catalog.get(flavouredWater.id)!
   assert.notEqual(plain.id, flavoured.id)
   assert.equal(plain.orderName, 'Água das pedras')
   assert.equal(flavoured.orderName, 'Água das pedras (Tangerina, frutos vermelhos, limão)')
-  const message = orderMessage([{ product: plain, quantity: 1 }, { product: flavoured, quantity: 2 }], '', '')
+  const message = orderMessage(
+    [
+      { product: plain, quantity: 1 },
+      { product: flavoured, quantity: 2 },
+    ],
+    '',
+    ''
+  )
   assert.ok(message.includes(`1 × Água das pedras — ${formatMoney(150)}`))
   assert.ok(message.includes('2 × Água das pedras (Tangerina, frutos vermelhos, limão)'))
 })
 
 test('restoring a cart accepts known integer quantities and discards damaged data', () => {
-  const valid = menuItemId(toast)
-  const invalid = menuItemId(coffee)
+  const valid = toast.id
+  const invalid = coffee.id
   for (const quantity of [-1, 0, 0.5, 100, '3', null]) {
-    assert.deepEqual(restoreOrder(JSON.stringify({ [valid]: 2, [invalid]: quantity, unknown: 1 }), catalog), { [valid]: 2 })
+    assert.deepEqual(restoreOrder(JSON.stringify({ [valid]: 2, [invalid]: quantity, unknown: 1 }), catalog), {
+      [valid]: 2,
+    })
   }
   assert.deepEqual(restoreOrder(JSON.stringify({ [valid]: 99 }), catalog), { [valid]: 99 })
 })
 
 test('invalid or unavailable stored carts start empty', () => {
-  for (const value of [null, '', '{broken', 'null', 'true', '[]', '123']) assert.deepEqual(restoreOrder(value, catalog), {})
+  for (const value of [null, '', '{broken', 'null', 'true', '[]', '123'])
+    assert.deepEqual(restoreOrder(value, catalog), {})
 })
 
 test('an order message includes item quantities, total, customer name, and notes', () => {
@@ -90,7 +124,54 @@ test('the configured number is used without a fallback, and empty orders cannot 
   assert.equal(whatsAppOrderUrl('258843341600', [], '', ''), null)
 })
 
-test('invalid menu prices cannot silently become free items', () => {
-  assert.throws(() => createOrderCatalog([['Item', '', 'Consultar']]), /Preço inválido/)
-  assert.throws(() => createOrderCatalog([['Item', '', '-10 MT']]), /Preço inválido/)
+test('prices must be finite numbers, including when menu data comes from outside TypeScript', () => {
+  for (const price of ['', '   ', '1.000 MT', 'Consultar', -10, NaN, Infinity, null]) {
+    assert.throws(() => createOrderCatalog([{ ...toast, price } as MenuProduct]), /Preço inválido/)
+  }
+  const expensive = createOrderCatalog([{ ...toast, price: 1000.5 }]).get(toast.id)!
+  assert.equal(orderTotal([{ product: expensive, quantity: 2 }]), 2001)
+  assert.ok(orderMessage([{ product: expensive, quantity: 1 }], '', '').includes(formatMoney(1000.5)))
+})
+
+test('saved quantities survive a product name, description, or price change', () => {
+  const edited = createOrderCatalog([
+    { ...toast, name: 'Tosta de abacate', description: 'Receita atualizada', price: 450 },
+  ])
+  const restored = restoreOrder(JSON.stringify({ [toast.id]: 2 }), edited)
+  assert.deepEqual(restored, { [toast.id]: 2 })
+  assert.equal(orderTotal([{ product: edited.get(toast.id)!, quantity: restored[toast.id] }]), 900)
+})
+
+test('old carts migrate to stable IDs with current prices without doubling quantities', () => {
+  const legacyId = JSON.stringify([toast.name, toast.description, '400 MT'])
+  assert.deepEqual(restoreOrder(JSON.stringify({ [legacyId]: 2 }), catalog), { [toast.id]: 2 })
+  assert.deepEqual(restoreOrder(JSON.stringify({ [legacyId]: 2, [toast.id]: 3 }), catalog), { [toast.id]: 3 })
+  const unknown = JSON.stringify(['Removed dish', '', '400 MT'])
+  const stored = { [unknown]: 1, '[broken': 4, [legacyId]: 0.5, [coffee.id]: 1 }
+  assert.deepEqual(restoreOrder(JSON.stringify(stored), catalog), { [coffee.id]: 1 })
+})
+
+test('conflicting IDs fail rather than silently changing another dish', () => {
+  assert.throws(() => createOrderCatalog([toast, { ...coffee, id: toast.id }]), /ID duplicado/)
+  assert.throws(() => createOrderCatalog([{ ...toast, id: '__proto__' }]), /ID inválido/)
+  assert.throws(() => createOrderCatalog([{ ...toast, name: ' ' }]), /Nome inválido/)
+})
+
+test('the real menu keeps drinks last and shares only intentional duplicates', () => {
+  assert.deepEqual(
+    menuCategories.map((category) => category.id),
+    ['pequeno-almoco', 'almoco', 'bebidas']
+  )
+  const entries = menuCategories.flatMap(
+    (category) => category.groups?.flatMap((group) => group.items) ?? category.items ?? []
+  )
+  for (const name of ['Guacamole', 'Húmus']) {
+    const repeated = entries.filter((item) => item.name === name)
+    assert.equal(repeated.length, 2)
+    assert.equal(new Set(repeated.map((item) => item.id)).size, 1)
+  }
+  assert.equal(
+    new Set(entries.filter((item) => item.name === 'Água das pedras').map((item) => item.id)).size,
+    2
+  )
 })

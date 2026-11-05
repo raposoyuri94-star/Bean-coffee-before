@@ -12,7 +12,14 @@ type OrderDialogProps = {
   onQuantityChange: (id: string, quantity: number) => void
 }
 
-export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQuantityChange }: OrderDialogProps) {
+export default function OrderDialog({
+  open,
+  lines,
+  phone,
+  onClose,
+  onBrowse,
+  onQuantityChange,
+}: OrderDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [customerName, setCustomerName] = useState('')
   const [notes, setNotes] = useState('')
@@ -23,16 +30,24 @@ export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQ
     const dialog = dialogRef.current
     if (!open || !dialog) return
     const previousOverflow = document.body.style.overflow
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    // Safari can leave focus on body after a touch opens a dialog. Body has a
+    // layout box but cannot serve as a useful return target for keyboard users.
+    const previousFocus =
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : null
     dialog.showModal()
     document.body.style.overflow = 'hidden'
     return () => {
       if (dialog.open) dialog.close()
       document.body.style.overflow = previousOverflow
-      if (previousFocus?.isConnected && previousFocus.getClientRects().length) previousFocus.focus({ preventScroll: true })
+      if (previousFocus?.isConnected && previousFocus.getClientRects().length)
+        previousFocus.focus({ preventScroll: true })
       else {
+        const cart = document.querySelector<HTMLElement>('.order-cart-bar')
         const toggle = document.querySelector<HTMLElement>('.menu-toggle')
-        const fallback = toggle?.getClientRects().length ? toggle : document.getElementById('start-order')
+        const fallback =
+          cart ?? (toggle?.getClientRects().length ? toggle : document.getElementById('start-order'))
         fallback?.focus({ preventScroll: true })
       }
     }
@@ -42,55 +57,134 @@ export default function OrderDialog({ open, lines, phone, onClose, onBrowse, onQ
     onQuantityChange(id, quantity)
     if (quantity === 0) {
       window.requestAnimationFrame(() => {
-        dialogRef.current?.querySelector<HTMLElement>('.order-line .quantity-control button, .order-browse')?.focus({ preventScroll: true })
+        dialogRef.current
+          ?.querySelector<HTMLElement>('.order-line .quantity-control button, .order-browse')
+          ?.focus({ preventScroll: true })
       })
     }
   }
 
-  return <dialog id="order-dialog" ref={dialogRef} className="order-dialog" aria-labelledby="order-title" aria-describedby="order-intro" onClose={onClose} onClick={event => {
-    if (event.target === event.currentTarget) onClose()
-  }}>
-    <div className="order-dialog-content">
-      <div className="order-dialog-heading">
-        <h2 id="order-title">O seu pedido</h2>
-        <button className="order-close" type="button" onClick={onClose} aria-label="Fechar pedido"><span aria-hidden="true">×</span></button>
-      </div>
-      {lines.length ? <>
-        <p id="order-intro" className="order-intro">Reveja os seus favoritos antes de continuar.</p>
-        <ul className="order-lines">
-          {lines.map(({ product, quantity }) => <li className="order-line" key={product.id}>
-            <div className="order-line-copy">
-              <h3>{product.name}</h3>
-              {product.description && <p>{product.description}</p>}
-              <span>{formatMoney(product.price)} / unidade</span>
-              <button className="order-remove" type="button" onClick={() => changeQuantity(product.id, 0)} aria-label={`Remover ${product.name} do pedido`}>Remover</button>
-            </div>
-            <div className="order-line-actions">
-              <strong>{formatMoney(product.price * quantity)}</strong>
-              <QuantityControl name={product.orderName} quantity={quantity} onChange={value => changeQuantity(product.id, value)} />
-            </div>
-          </li>)}
-        </ul>
-        <div className="order-fields">
-          <label htmlFor="order-name">Nome <span>(opcional)</span></label>
-          <input id="order-name" name="customer-name" autoComplete="name" maxLength={80} value={customerName} onChange={event => setCustomerName(event.target.value)} />
-          <label htmlFor="order-notes">Observações <span>(opcional)</span></label>
-          <textarea id="order-notes" name="order-notes" autoComplete="off" rows={3} maxLength={500} placeholder="Alergias, preferências ou outras indicações…" value={notes} onChange={event => setNotes(event.target.value)} />
+  return (
+    <dialog
+      id="order-dialog"
+      ref={dialogRef}
+      className="order-dialog"
+      aria-labelledby="order-title"
+      aria-describedby="order-intro"
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose()
+      }}
+    >
+      <div className="order-dialog-content">
+        <div className="order-dialog-heading">
+          <h2 id="order-title">O seu pedido</h2>
+          <button className="order-close" type="button" onClick={onClose} aria-label="Fechar pedido">
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
-        <div className="order-total" aria-live="polite"><span>Total dos itens</span><strong>{formatMoney(orderTotal(lines))}</strong></div>
-        {whatsappUrl ? <>
-          <a className="button order-whatsapp" href={whatsappUrl} target="_blank" rel="noopener noreferrer">Continuar no WhatsApp</a>
-          <p className="order-handoff-note">WhatsApp do Bean: <span className="order-recipient">+{recipient}</span><br />A mensagem abre pronta para rever e enviar.</p>
-        </> : <>
-          <button className="button order-whatsapp" type="button" disabled>Continuar no WhatsApp</button>
-          <p className="order-handoff-note" role="status">Os pedidos pelo WhatsApp estão temporariamente indisponíveis. Pode continuar a escolher no menu.</p>
-        </>}
-        <button type="button" className="order-browse" onClick={onBrowse}>Continuar a escolher</button>
-      </> : <div className="order-empty">
-        <p id="order-intro">O seu pedido ainda está vazio.</p>
-        <p>Escolha os seus favoritos no menu e adicione a quantidade que deseja.</p>
-        <button type="button" className="button button-gold order-browse" onClick={onBrowse}>Escolher no menu</button>
-      </div>}
-    </div>
-  </dialog>
+        {lines.length ? (
+          <>
+            <p id="order-intro" className="order-intro">
+              Reveja os seus favoritos antes de continuar.
+            </p>
+            <ul className="order-lines">
+              {lines.map(({ product, quantity }) => (
+                <li className="order-line" key={product.id}>
+                  <div className="order-line-copy">
+                    <h3>{product.name}</h3>
+                    {product.description && <p>{product.description}</p>}
+                    <span>{formatMoney(product.price)} / unidade</span>
+                    <button
+                      className="order-remove"
+                      type="button"
+                      onClick={() => changeQuantity(product.id, 0)}
+                      aria-label={`Remover ${product.name} do pedido`}
+                    >
+                      Remover
+                    </button>
+                  </div>
+                  <div className="order-line-actions">
+                    <strong>{formatMoney(product.price * quantity)}</strong>
+                    <QuantityControl
+                      name={product.orderName}
+                      quantity={quantity}
+                      onChange={(value) => changeQuantity(product.id, value)}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="order-fields">
+              <label htmlFor="order-name">
+                Nome <span>(opcional)</span>
+              </label>
+              <input
+                id="order-name"
+                name="customer-name"
+                autoComplete="name"
+                maxLength={80}
+                value={customerName}
+                onChange={(event) => setCustomerName(event.target.value)}
+              />
+              <label htmlFor="order-notes">
+                Observações <span>(opcional)</span>
+              </label>
+              <textarea
+                id="order-notes"
+                name="order-notes"
+                autoComplete="off"
+                rows={3}
+                maxLength={500}
+                placeholder="Alergias, preferências ou outras indicações…"
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+              />
+            </div>
+            <div className="order-total" aria-live="polite">
+              <span>Total dos itens</span>
+              <strong>{formatMoney(orderTotal(lines))}</strong>
+            </div>
+            {whatsappUrl ? (
+              <>
+                <a
+                  className="button order-whatsapp"
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Continuar no WhatsApp
+                </a>
+                <p className="order-handoff-note">
+                  WhatsApp do Bean: <span className="order-recipient">+{recipient}</span>
+                  <br />A mensagem abre pronta para rever e enviar.
+                </p>
+              </>
+            ) : (
+              <>
+                <button className="button order-whatsapp" type="button" disabled>
+                  Continuar no WhatsApp
+                </button>
+                <p className="order-handoff-note" role="status">
+                  Os pedidos pelo WhatsApp estão temporariamente indisponíveis. Pode continuar a escolher no
+                  menu.
+                </p>
+              </>
+            )}
+            <button type="button" className="order-browse" onClick={onBrowse}>
+              Continuar a escolher
+            </button>
+          </>
+        ) : (
+          <div className="order-empty">
+            <p id="order-intro">O seu pedido ainda está vazio.</p>
+            <p>Escolha os seus favoritos no menu e adicione a quantidade que deseja.</p>
+            <button type="button" className="button button-gold order-browse" onClick={onBrowse}>
+              Escolher no menu
+            </button>
+          </div>
+        )}
+      </div>
+    </dialog>
+  )
 }

@@ -1,47 +1,222 @@
-.gallery-page { color-scheme: light; }
-.gallery-intro { padding: 90px clamp(24px, 7vw, 100px) 60px; animation: gallery-arrive 800ms both; }
-.gallery-intro .section-tag { margin-bottom: 28px; }
-.gallery-intro h1 { color: var(--green); font-size: clamp(48px, 6.8vw, 86px); line-height: 1.08; margin: 0 0 38px; }
-.gallery-intro-bottom { display: flex; justify-content: space-between; align-items: end; gap: 30px; }
-.gallery-intro-bottom p { max-width: 410px; color: #6c685f; font-size: 15px; line-height: 1.8; }
-.gallery-grid { padding: 0 clamp(24px, 7vw, 100px) 95px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 44px; scroll-margin-top: 25px; }
-.gallery-card { margin: 0; min-width: 0; animation: gallery-arrive 900ms 120ms both; }
-.gallery-card:nth-child(2) { animation-delay: 260ms; }
-.gallery-photo { display: block; width: 100%; position: relative; overflow: hidden; border: 0; padding: 0; cursor: zoom-in; background: #ded5c6; }
-.gallery-photo img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; transition: transform 700ms cubic-bezier(.2,.7,.2,1); }
-.gallery-card:nth-child(2) img { object-position: 65% center; }
-.gallery-photo:hover img, .gallery-photo:focus-visible img { transform: scale(1.045); }
-.gallery-expand { position: absolute; right: 16px; bottom: 16px; background: var(--paper); color: var(--green); padding: 10px 15px; font: 12px "DM Sans", sans-serif; }
-.gallery-card figcaption { padding-top: 24px; }
-.gallery-label { font-size: 10px; letter-spacing: .17em; color: #71634f; }
-.gallery-card h2 { margin: 12px 0 10px; color: var(--green); font-size: clamp(27px, 3vw, 38px); }
-.gallery-card p { color: #6c685f; font-size: 14px; line-height: 1.7; }
-.gallery-invitation { text-align: center; padding: 75px 24px 85px; background: var(--green); color: var(--paper); }
-.gallery-invitation .section-tag { justify-content: center; color: #d5c7b4; }
-.gallery-invitation h2 { color: var(--paper); font-size: clamp(40px, 5vw, 64px); margin-bottom: 35px; }
-.gallery-page footer a { text-decoration: none; }
-.gallery-dialog { padding: 0; border: 0; width: min(920px, 94vw); max-height: 94svh; overscroll-behavior: contain; background: #172318; color: #f2eee5; }
-.gallery-dialog::backdrop { background: #080c08e8; }
-.gallery-dialog[open] { animation: gallery-arrive 240ms both; }
-.gallery-dialog-content { padding: 20px; }
-.gallery-dialog-content > img { display: block; width: 100%; height: min(65svh, 680px); object-fit: contain; }
-.gallery-dialog-content > p { text-align: center; margin: 18px 0; }
-.gallery-dialog button { border: 1px solid #f2eee566; background: transparent; color: inherit; padding: 10px 16px; cursor: pointer; font: inherit; font-size: 13px; }
-.gallery-close { display: block; margin: 0 0 16px auto; }
-.gallery-dialog-controls { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
-@keyframes gallery-arrive { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+.gallery-page {
+  color-scheme: light;
+}
+.gallery-intro {
+  padding: 90px clamp(24px, 7vw, 100px) 60px;
+  animation: gallery-arrive 800ms both;
+}
+.gallery-intro .section-tag {
+  margin-bottom: 28px;
+}
+.gallery-intro h1 {
+  color: var(--green);
+  font-size: clamp(48px, 6.8vw, 86px);
+  line-height: 1.08;
+  margin: 0 0 38px;
+}
+.gallery-intro-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 30px;
+}
+.gallery-intro-bottom p {
+  max-width: 410px;
+  color: #6c685f;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.gallery-grid {
+  padding: 0 clamp(24px, 7vw, 100px) 95px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 44px;
+  scroll-margin-top: 25px;
+}
+.gallery-card {
+  margin: 0;
+  min-width: 0;
+  animation: gallery-arrive 900ms 120ms both;
+}
+.gallery-card:nth-child(2) {
+  animation-delay: 260ms;
+}
+.gallery-photo {
+  display: block;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  cursor: zoom-in;
+  background: #ded5c6;
+}
+.gallery-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.gallery-card:nth-child(2) img {
+  object-position: 65% center;
+}
+.gallery-photo:hover img,
+.gallery-photo:focus-visible img {
+  transform: scale(1.045);
+}
+.gallery-expand {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  background: var(--paper);
+  color: var(--green);
+  padding: 10px 15px;
+  font:
+    12px 'DM Sans',
+    sans-serif;
+}
+.gallery-card figcaption {
+  padding-top: 24px;
+}
+.gallery-label {
+  font-size: 10px;
+  letter-spacing: 0.17em;
+  color: #71634f;
+}
+.gallery-card h2 {
+  margin: 12px 0 10px;
+  color: var(--green);
+  font-size: clamp(27px, 3vw, 38px);
+}
+.gallery-card p {
+  color: #6c685f;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.gallery-invitation {
+  text-align: center;
+  padding: 75px 24px 85px;
+  background: var(--green);
+  color: var(--paper);
+}
+.gallery-invitation .section-tag {
+  justify-content: center;
+  color: #d5c7b4;
+}
+.gallery-invitation h2 {
+  color: var(--paper);
+  font-size: clamp(40px, 5vw, 64px);
+  margin-bottom: 35px;
+}
+.gallery-page footer a {
+  text-decoration: none;
+}
+.gallery-dialog {
+  padding: 0;
+  border: 0;
+  width: min(920px, 94vw);
+  max-height: 94svh;
+  overscroll-behavior: contain;
+  background: #172318;
+  color: #f2eee5;
+}
+.gallery-dialog::backdrop {
+  background: #080c08e8;
+}
+.gallery-dialog[open] {
+  animation: gallery-arrive 240ms both;
+}
+.gallery-dialog-content {
+  padding: 20px;
+}
+.gallery-dialog-content > img {
+  display: block;
+  width: 100%;
+  height: min(65svh, 680px);
+  object-fit: contain;
+}
+.gallery-dialog-content > p {
+  text-align: center;
+  margin: 18px 0;
+}
+.gallery-dialog button {
+  border: 1px solid #f2eee566;
+  background: transparent;
+  color: inherit;
+  padding: 10px 16px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+.gallery-close {
+  display: block;
+  margin: 0 0 16px auto;
+}
+.gallery-dialog-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+@keyframes gallery-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 @media (max-width: 640px) {
-  .gallery-intro { padding-top: 56px; }
-  .gallery-intro-bottom { align-items: start; flex-direction: column; }
-  .gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px 12px; padding-bottom: 60px; }
-  .gallery-expand { right: 8px; bottom: 8px; padding: 7px 10px; font-size: 11px; }
-  .gallery-card figcaption { padding-top: 14px; }
-  .gallery-label { font-size: 9px; letter-spacing: .08em; }
-  .gallery-card h2 { font-size: 22px; }
-  .gallery-card p { font-size: 13px; }
-  .gallery-card:nth-child(2) { margin-top: 0; }
+  .gallery-intro {
+    padding-top: 56px;
+  }
+  .gallery-intro-bottom {
+    align-items: start;
+    flex-direction: column;
+  }
+  .gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px 12px;
+    padding-bottom: 60px;
+  }
+  .gallery-expand {
+    right: 8px;
+    bottom: 8px;
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+  .gallery-card figcaption {
+    padding-top: 14px;
+  }
+  .gallery-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+  }
+  .gallery-card h2 {
+    font-size: 22px;
+  }
+  .gallery-card p {
+    font-size: 13px;
+  }
+  .gallery-card:nth-child(2) {
+    margin-top: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .gallery-page *, .gallery-page *::before, .gallery-page *::after { animation: none !important; transition: none !important; scroll-behavior: auto; }
+  .gallery-page *,
+  .gallery-page *::before,
+  .gallery-page *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto;
+  }
 }
-.gallery-card-landscape .gallery-photo img { aspect-ratio: 3 / 2; }
+.gallery-card-landscape .gallery-photo img {
+  aspect-ratio: 3 / 2;
+}
