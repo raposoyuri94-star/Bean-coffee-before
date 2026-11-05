@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import SiteHeader, { Brand } from './SiteHeader'
+import SiteHeader from './SiteHeader'
+import SiteFooter from './SiteFooter'
 import OrderDialog from './OrderDialog'
 import MenuSection from './menu/MenuSection'
 import { orderCatalog } from './data/menu'
@@ -161,13 +162,7 @@ export default function BeanPage() {
           </div>
         </section>
       </main>
-      <footer inert={open}>
-        <a href="#top">
-          <Brand />
-        </a>
-        <p>Bom café. Boa companhia. Maputo.</p>
-        <p>© 2026 Bean Maputo</p>
-      </footer>
+      <SiteFooter navigationOpen={open} />
       {order.count > 0 && (
         <button
           className="order-cart-bar"

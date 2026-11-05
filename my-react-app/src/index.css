@@ -153,21 +153,6 @@ h2 em {
   color: #ffffff80;
 }
 
-footer {
-  background: #101711;
-  color: #ffffff8c;
-  padding: 38px clamp(24px, 5vw, 78px);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 10px;
-  letter-spacing: 0.09em;
-}
-
-footer p {
-  margin: 0;
-}
-
 a:focus-visible,
 button:focus-visible {
   outline: 2px solid var(--gold);
@@ -186,11 +171,6 @@ button:focus-visible {
 @media (max-width: 760px) {
   h1 {
     font-size: clamp(49px, 15vw, 70px);
-  }
-  footer {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
   }
 }
 

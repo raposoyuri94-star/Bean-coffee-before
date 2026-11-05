@@ -109,10 +109,6 @@
   clip: rect(0, 0, 0, 0);
 }
 
-footer .brand {
-  color: #fff;
-}
-
 .nav > a:not(.nav-cta) {
   position: relative;
 }

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import SiteHeader from './SiteHeader'
+import SiteFooter from './SiteFooter'
 import { useInitialHashScroll } from './useInitialHashScroll'
 import './GalleryPage.css'
 
@@ -158,11 +159,7 @@ export default function GalleryPage() {
           </a>
         </section>
       </main>
-      <footer inert={navigationOpen}>
-        <a href={import.meta.env.BASE_URL + ''}>BEAN MAPUTO</a>
-        <p>Bom café. Boa companhia. Maputo.</p>
-        <p>© 2026 Bean Maputo</p>
-      </footer>
+      <SiteFooter navigationOpen={navigationOpen} />
       <dialog
         className="gallery-dialog"
         ref={dialog}

@@ -1,0 +1,136 @@
+.site-footer {
+  padding: 38px clamp(24px, 5vw, 78px) 22px;
+  background: #101711;
+  color: #ffffffb3;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+
+.footer-main,
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+}
+
+.footer-home {
+  text-decoration: none;
+}
+
+.site-footer .brand {
+  color: #fff;
+}
+
+.footer-bottom {
+  margin-top: 26px;
+  padding-top: 12px;
+  border-top: 1px solid #ffffff24;
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+}
+
+.footer-links button {
+  min-height: 44px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.footer-links button:hover {
+  color: var(--paper);
+}
+
+.footer-credit strong {
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.site-notice {
+  width: min(640px, calc(100% - 32px));
+  max-height: calc(100svh - 32px);
+  padding: clamp(20px, 4vw, 36px);
+  border: 1px solid #17231830;
+  background: var(--paper);
+  color: var(--ink);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.site-notice::backdrop {
+  background: #080c08cc;
+}
+
+.site-notice-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #17231830;
+}
+
+.site-notice-heading h2 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 38px);
+  line-height: 1.15;
+}
+
+.site-notice-close {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid #17231855;
+  background: transparent;
+  color: var(--green);
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.site-notice-copy h3 {
+  margin: 24px 0 10px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 23px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.site-notice-copy p {
+  color: #56544c;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.site-notice-copy a {
+  color: var(--green);
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .footer-main,
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .footer-bottom {
+    gap: 12px;
+  }
+
+  .footer-links {
+    justify-content: center;
+  }
+}
